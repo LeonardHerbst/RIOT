@@ -62,12 +62,6 @@ extern "C" {
 #  define PAA5100JE_SAUL_INFO         { .name = "Flow Sensor (PAA5100JE/PMW3901)" }
 #endif
 
-#ifndef PAA5100JE_SLOW_SAUL_INFO
-/**
- * Default slow driver SAUL registry information
- */
-#  define PAA5100JE_SLOW_SAUL_INFO         { .name = "Slow: Flow Sensor (PAA5100JE/PMW3901)" }
-#endif
 /**@}*/
 
 /**
@@ -83,8 +77,7 @@ static const paa5100je_params_t paa5100je_params[] =
  */
 static const saul_reg_info_t paa5100je_saul_info[] =
 {
-    PAA5100JE_SAUL_INFO,
-    PAA5100JE_SLOW_SAUL_INFO
+    PAA5100JE_SAUL_INFO
 };
 
 #ifdef __cplusplus
