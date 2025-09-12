@@ -53,7 +53,6 @@ typedef enum {
     PMW3901   = 1,
 } paa5100je_variant_t;
 
-
 /**
  * @brief   Device initialization parameters
  */
