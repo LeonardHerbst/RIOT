@@ -49,7 +49,7 @@ int paa5100je_init(paa5100je_t *dev, const paa5100je_params_t *params)
     }
     _write_reg(dev, REG_POWER_UP_RESET, 0x5A);
 
-    for(uint8_t offset = 0; offset < 5; offset++) {
+    for (uint8_t offset = 0; offset < 5; offset++) {
         (void) _read_reg(dev, REG_DATA_READY + offset);
     }
 
@@ -183,10 +183,12 @@ static void paa5100je_prop_init(const paa5100je_t *dev)
     if (tmp == 0x00){
         int c1 = _read_reg(dev, 0x70);
         int c2 = _read_reg(dev, 0x71);
-        if (c1 <= 28)
+        if (c1 <= 28) {
             c1 += 14;
-        if (c1 > 28)
+        }
+        if (c1 > 28) {
             c1 += 11;
+        }
         c1 = MAX(0, MIN(0x3F, c1));
         c2 = (c2 * 45);
         _write_reg(dev, 0x7F, 0x00);
