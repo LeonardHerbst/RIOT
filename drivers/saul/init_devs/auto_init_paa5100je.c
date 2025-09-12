@@ -32,7 +32,7 @@
 static paa5100je_t paa5100je_devs[PAA5100JE_NUM];
 
 /**
- * @brief   Allocate Memory for the SAUL registry entriy
+ * @brief   Allocate Memory for the SAUL registry entry
  */
 static saul_reg_t saul_entries[PAA5100JE_NUM];
 

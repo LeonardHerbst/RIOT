@@ -10,6 +10,25 @@
  * @ingroup     drivers_sensors
  * @brief       Optical Flow Sensor
  *
+ * ## Description
+ *
+ * The PAA5100JE and PMW3901 sensors are accessed in the same way over SPI
+ * but require slightly different initialization code.
+ * Since the datasheets are not very detailed, I created this driver based on a reference
+ * implementation by Pimoroni, who designed a breakout board for the PMW3901.
+ *
+ * The motion data read represents the relative motion since the last readout.
+ * It depends on the surface, lighting conditions, and the sensor’s distance from the ground.
+ *
+ * This driver provides @ref drivers_saul capabilities.
+ *
+ * Datasheets:
+ * * [PAA5100JE](https://cdn.shopify.com/s/files/1/0174/1800/files/PAA5100JE-Q-GDS-R1.00_25072018.pdf)
+ * * [PMW3901](https://wiki.bitcraze.io/_media/projects:crazyflie2:expansionboards:pot0189-pmw3901mb-txqt-ds-r1.00-200317_20170331160807_public.pdf)
+ *
+ * Reference Implementation:
+ * * [Pomoroni](https://github.com/pimoroni/pmw3901-python)
+ *
  * @{
  *
  * @file
