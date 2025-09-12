@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2025 TU Dresden
+# SPDX-License-Identifier: LGPL-2.1-only
+
+config MODULE_PAA5100JE
+    bool "PAA5100JE"
+    depends on TEST_KCONFIG
+    depends on HAS_PERIPH_SPI
+    select MODULE_PERIPH_SPI
+
+menu "PAA5100JE driver"
+    depends on USEMODULE_PAA5100JE
+
+config PAA5100JE_QUALITY_THRESHOLD
+    hex "Quality Threshold"
+    range 0x00 0xff
+    default 0x19
+    help
+        When reading the data from the burst register a quality threshold can be defined.
+        If the threshold is not met, the reading is redone until it is or the function times out.
+
+config PAA5100JE_TIMEOUT_MS
+    int "Timeout in Milliseconds"
+    default 1000
+    help
+        The amount of time it should try to read a value from the sensor before the operation is
+        aborted.
+
+endmenu # LM75 driver
