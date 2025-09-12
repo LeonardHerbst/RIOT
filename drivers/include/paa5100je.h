@@ -81,20 +81,6 @@ int paa5100je_init(paa5100je_t *dev, const paa5100je_params_t *params);
  */
 int paa5100je_get_motion_burst(const paa5100je_t *dev, int16_t *x, int16_t *y);
 
-/*
- * @brief   Reads the relative motition vector from the device.
- *
- * Reads five individually addressed registers from the device. Repeats this until data is ready.
- *
- * @param[in]     dev      device descriptor
- * @param[out]    x        x component
- * @param[out]    y        y component
- *
- * @retval        0        on success
- * @retval        -ETIME   if data was not ready in time
- */
-int paa5100je_get_motion_seq(const paa5100je_t *dev, int16_t *x, int16_t *y);
-
 #ifdef __cplusplus
 }
 #endif

@@ -149,26 +149,6 @@ int paa5100je_get_motion_burst(const paa5100je_t *dev, int16_t *x, int16_t *y)
     return -ETIME;
 }
 
-int paa5100je_get_motion_seq(const paa5100je_t *dev, int16_t *x, int16_t *y)
-{
-    uint8_t data[5];
-    ztimer_now_t start = ztimer_now(ZTIMER_MSEC);
-
-    do {
-        for (int i = 0; i < 5; i++) {
-            data[i] = _read_reg(dev, (REG_DATA_READY + i));
-        }
-        if (data[0] & 0b10000000) {
-            *x = (int16_t)(data[2] << 8 | data[1]);
-            *y = (int16_t)(data[4] << 8 | data[3]);
-            return 0;
-        }
-        ztimer_sleep(ZTIMER_MSEC, 1);
-    } while (CONFIG_PAA5100JE_TIMEOUT_MS
-             && ztimer_now(ZTIMER_MSEC) < start + CONFIG_PAA5100JE_TIMEOUT_MS);
-    return -ETIME;
-}
-
 /**
  * @brief   Writes a set of magic values to the sensors registers.
  *

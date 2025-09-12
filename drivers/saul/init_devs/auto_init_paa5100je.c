@@ -32,9 +32,9 @@
 static paa5100je_t paa5100je_devs[PAA5100JE_NUM];
 
 /**
- * @brief   Allocate Memory for the SAUL registry entries
+ * @brief   Allocate Memory for the SAUL registry entriy
  */
-static saul_reg_t saul_entries[PAA5100JE_NUM * 2];
+static saul_reg_t saul_entries[PAA5100JE_NUM];
 
 /**
  * @brief   Define the number of saul info
@@ -42,15 +42,14 @@ static saul_reg_t saul_entries[PAA5100JE_NUM * 2];
 #define PAA5100JE_INFO_NUM ARRAY_SIZE(paa5100je_saul_info)
 
 /**
- * @name    Import SAUL endpoints
+ * @name    Import SAUL endpoint
  * @{
  */
 extern const saul_driver_t paa5100je_saul_driver;
-extern const saul_driver_t paa5100je_slow_saul_driver;
 
 void auto_init_paa5100je(void)
 {
-    assert(PAA5100JE_INFO_NUM == PAA5100JE_NUM * 2);
+    assert(PAA5100JE_INFO_NUM == PAA5100JE_NUM);
 
     for (unsigned int i = 0; i < PAA5100JE_NUM; i++) {
         LOG_DEBUG("[auto_init_saul] initializing paa5100je #%u\n", i);
@@ -60,13 +59,9 @@ void auto_init_paa5100je(void)
             continue;
         }
 
-        saul_entries[i * 2].dev = &(paa5100je_devs[i]);
-        saul_entries[i * 2].name = paa5100je_saul_info[i * 2].name;
-        saul_entries[i * 2].driver = &paa5100je_saul_driver;
-        saul_entries[(i * 2) + 1].dev = &(paa5100je_devs[i]);
-        saul_entries[(i * 2) + 1].name = paa5100je_saul_info[(i * 2) + 1].name;
-        saul_entries[(i * 2) + 1].driver = &paa5100je_slow_saul_driver;
-        saul_reg_add(&(saul_entries[(i * 2)]));
-        saul_reg_add(&(saul_entries[(i * 2) + 1]));
+        saul_entries[i].dev = &(paa5100je_devs[i]);
+        saul_entries[i].name = paa5100je_saul_info[i].name;
+        saul_entries[i].driver = &paa5100je_saul_driver;
+        saul_reg_add(&saul_entries[i]);
     }
 }
