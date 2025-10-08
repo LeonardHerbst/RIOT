@@ -7,8 +7,8 @@
 
 /**
  * @ingroup     drivers_paa5100je
- * @{
  *
+ * @{
  * @file
  * @brief       Internal addresses, registers and constants
  *
