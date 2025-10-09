@@ -59,6 +59,7 @@ int paa5100je_init(paa5100je_t *dev, const paa5100je_params_t *params)
     uint8_t inv_id = _read_reg(dev, REG_INV_ID);
     uint8_t rev = _read_reg(dev, REG_REV);
     if ((id ^ inv_id) != 0xFF || id != 0x49 || rev != 0x00) {
+        LOG_ERROR("[PAA5100JE] Wrong id, inverted id, or unknown revision.\n");
         return -ENODEV;
     }
     return 0;
