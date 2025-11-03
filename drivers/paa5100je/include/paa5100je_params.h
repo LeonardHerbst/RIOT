@@ -26,7 +26,22 @@ extern "C" {
 #endif
 
 /**
- * @name    Default configuration parameters for the PAA5100JE driver.
+ * @brief Default quality threshold for motion data readout.
+ */
+#ifndef CONFIG_PAA5100JE_QUALITY_THRESHOLD
+#  define CONFIG_PAA5100JE_QUALITY_THRESHOLD    (0x19)
+#endif
+
+
+/**
+ * @brief Default timeout for motion data readout in milliseconds.
+ */
+#ifndef CONFIG_PAA5100JE_TIMEOUT_MS
+#  define CONFIG_PAA5100JE_TIMEOUT_MS           (1000U)
+#endif
+
+/**
+ * @name    Default configuration parameters for the PAA5100JE/PMW3901 driver.
  * @{
  */
 #ifndef PAA5100JE_PARAM_SPI
@@ -38,34 +53,34 @@ extern "C" {
 #endif
 
 #ifndef PAA5100JE_PARAM_CS
-#  define PAA5100JE_PARAM_CS          (GPIO_PIN(1, 4))  /**< Default SPI chip select pin */
+#  define PAA5100JE_PARAM_CS          (GPIO_PIN(1, 2))  /**< Default SPI chip select pin */
 #endif
 
 #ifndef PAA5100JE_PARAM_VAR
 #  define PAA5100JE_PARAM_VAR         PAA5100JE         /**< Default variant*/
 #endif
 
-#ifndef PAA5100JE_PARAMS
 /**
- * Default sensor parameters.
+ * @brief Default sensor parameters.
  */
+#ifndef PAA5100JE_PARAMS
 #  define PAA5100JE_PARAMS            { .spi = PAA5100JE_PARAM_SPI,     \
                                         .clk = PAA5100JE_PARAM_SPI_CLK, \
                                         .cs  = PAA5100JE_PARAM_CS, \
                                         .var = PAA5100JE_PARAM_VAR }
 #endif
 
-#ifndef PAA5100JE_SAUL_INFO
 /**
- * Default driver SAUL registry information
+ * @brief Default driver SAUL registry information
  */
+#ifndef PAA5100JE_SAUL_INFO
 #  define PAA5100JE_SAUL_INFO         { .name = "Flow Sensor (PAA5100JE/PMW3901)" }
 #endif
 
 /**@}*/
 
 /**
- * @brief   Default configuration parameters
+ * @brief Default configuration parameters
  */
 static const paa5100je_params_t paa5100je_params[] =
 {
@@ -73,7 +88,7 @@ static const paa5100je_params_t paa5100je_params[] =
 };
 
 /**
- * @brief   Additional meta information to keep in the SAUL registry
+ * @brief Additional meta information to keep in the SAUL registry
  */
 static const saul_reg_info_t paa5100je_saul_info[] =
 {

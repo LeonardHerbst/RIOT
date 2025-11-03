@@ -8,7 +8,7 @@
  * @{
  *
  * @file
- * @brief       SAUL adaption for PAA5100JE/PMW3901 optical flow sensors
+ * @brief       SAUL adaption for the PAA5100JE/PMW3901 optical flow sensor
  *
  * @author      Leonard Herbst <leonard.herbst@tu-dresden.de>
  *

@@ -8,7 +8,7 @@
  * @{
  *
  * @file
- * @brief       Device driver implementation for the PAA5100JE
+ * @brief       Device driver implementation for the PAA5100JE/PMW3901 optical flow sensor
  *
  * @author      Leonard Herbst <leonard.herbst@tu-dresden.de>
  *
@@ -60,19 +60,12 @@ int paa5100je_init(paa5100je_t *dev, const paa5100je_params_t *params)
     uint8_t rev = _read_reg(dev, REG_REV);
     if ((id ^ inv_id) != 0xFF || id != 0x49 || rev != 0x00) {
         LOG_ERROR("[PAA5100JE] Wrong id, inverted id, or unknown revision.\n");
+		printf("[PAA5100JE] ID: 0x%02X, INV_ID: 0x%02X, REV: 0x%02X\n", id, inv_id, rev);
         return -ENODEV;
     }
     return 0;
 }
 
-/**
- * @brief   Read a single register from the sensor
- *
- * @param[in]   dev    device descriptor
- * @param[in]   reg    register address
- *
- * @retval             value read from the device
- */
 static uint8_t _read_reg(const paa5100je_t *dev, uint8_t reg)
 {
     assert(dev);
@@ -89,14 +82,6 @@ static uint8_t _read_reg(const paa5100je_t *dev, uint8_t reg)
     return value;
 }
 
-/**
- * @brief   Read num bytes from a register
- *
- * @param[in]   dev    device descriptor
- * @param[in]   reg    register address
- * @param[in]   num    number of bytes to read
- * @param[out]  buf    destination buffer
- */
 static void _read_reg_burst(const paa5100je_t *dev, uint8_t reg, size_t num, uint8_t *buf)
 {
     assert(dev);
@@ -106,13 +91,6 @@ static void _read_reg_burst(const paa5100je_t *dev, uint8_t reg, size_t num, uin
     spi_release(dev->params->spi);
 }
 
-/**
- * @brief   Write a single register value to the sensor
- *
- * @param[in]   dev    device descriptor
- * @param[in]   reg    register address
- * @param[in]   value  register value to be written
- */
 static void _write_reg(const paa5100je_t *dev, uint8_t reg, uint8_t value)
 {
     assert(dev);
@@ -151,7 +129,7 @@ int paa5100je_get_motion_burst(const paa5100je_t *dev, int16_t *x, int16_t *y)
 }
 
 /**
- * @brief   Writes a set of magic values to the sensors registers.
+ * @brief Writes a set of magic values to the sensors registers.
  *
  * The datasheet does not explain this.
  * These values and registers are taken from a reference implementation.
@@ -202,13 +180,14 @@ static void paa5100je_prop_init(const paa5100je_t *dev)
 
     if (dev->params->var == PAA5100JE) {
         paa5100je_init_paa5100je(dev);
-    } else {
+    }
+    else {
         paa5100je_init_pmw3901(dev);
     }
 }
 
 /**
- * @brief   Writes a set of PAA5100JE specific magic values to the sensors registers.
+ * @brief Writes a set of PAA5100JE specific magic values to the sensors registers.
  *
  * @param[in]   dev    device descriptor
  */
@@ -325,7 +304,7 @@ static void paa5100je_init_paa5100je(const paa5100je_t *dev)
 }
 
 /**
- * @brief   Writes a set of PMW301 specific magic values to the sensors registers.
+ * @brief Writes a set of PMW301 specific magic values to the sensors registers.
  *
  * @param[in]   dev    device descriptor
  */

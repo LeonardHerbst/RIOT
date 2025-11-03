@@ -6,9 +6,9 @@
 #pragma once
 
 /**
- * @defgroup    drivers_paa5100je PAA5100JE
+ * @defgroup    drivers_paa5100je PAA5100JE/PMW3901 Driver
  * @ingroup     drivers_sensors
- * @brief       Optical Flow Sensor
+ * @brief       Driver for the PAA5100JE/PMW3901 Optical Flow Sensor
  *
  * ## Description
  *
@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 /**
- * @brief   Variant of the sensor
+ * @brief Variant of the sensor
  */
 typedef enum {
     PAA5100JE = 0,
@@ -54,7 +54,7 @@ typedef enum {
 } paa5100je_variant_t;
 
 /**
- * @brief   Device initialization parameters
+ * @brief Device initialization parameters
  */
 typedef struct {
     spi_t spi;                /**< SPI bus used */
@@ -64,26 +64,26 @@ typedef struct {
 } paa5100je_params_t;
 
 /**
- * @brief   Device descriptor for the driver
+ * @brief Device descriptor for the driver
  */
 typedef struct {
     const paa5100je_params_t *params;  /**< Device initialization parameters */
 } paa5100je_t;
 
 /**
- * @brief   Initialize the given device
+ * @brief Initialize the given device
  *
  * @param[inout]  dev      Device descriptor of the driver
  * @param[in]     params   Initialization parameters
  *
  * @retval        0        on success
  * @retval        -ENXIO   invalid SPI device
- * @retval        -EINVAL  invalid SPI CS pin/line or wrong device id or revision
+ * @retval        -ENODEV  invalid SPI CS pin/line or wrong device id or revision
  */
 int paa5100je_init(paa5100je_t *dev, const paa5100je_params_t *params);
 
 /**
- * @brief   Reads the relative motition vector from the device using burst read.
+ * @brief Reads the relative motition vector from the device using burst read.
  *
  * Reads twelve bytes from the burst register.
  * Repeats the read when the data is not ready, the quality is too low
