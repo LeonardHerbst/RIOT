@@ -7,8 +7,7 @@ RBPF_OBJS = $(RBPF_SOURCES:.c=.o)
 LLC ?= llc
 CLANG ?= clang
 INC_FLAGS = -nostdinc -isystem `$(CLANG) -print-file-name=include`
-EXTRA_CFLAGS ?= -Os -emit-llvm
-
+EXTRA_CFLAGS ?= -Os
 RBPFINCLUDE =  -I$(RIOTBASE)/drivers/include \
 	       -I$(RIOTBASE)/core/include \
 	       -I$(RIOTBASE)/core/lib/include \
@@ -25,6 +24,16 @@ clean:
 
 INC_FLAGS = -nostdinc -isystem `$(CLANG) -print-file-name=include`
 
+# $(RBPF_OBJS):  %.o:%.c
+# 	$(CLANG) $(INC_FLAGS) \
+# 	        $(RBPFINCLUDE) \
+# 	        -Wno-unused-value -Wno-pointer-sign -g3\
+# 	        -Wno-compare-distinct-pointer-types \
+# 	        -Wno-gnu-variable-sized-type-not-at-end \
+# 	        -Wno-address-of-packed-member -Wno-tautological-compare \
+# 	        -Wno-unknown-warning-option \
+# 	        $(EXTRA_CFLAGS) -c $< -o -| $(LLC) -march=bpf -mcpu=v2 -mattr=+alu32 -filetype=obj -o $@
+
 $(RBPF_OBJS):  %.o:%.c
 	$(CLANG) $(INC_FLAGS) \
 	        $(RBPFINCLUDE) \
@@ -33,7 +42,8 @@ $(RBPF_OBJS):  %.o:%.c
 	        -Wno-gnu-variable-sized-type-not-at-end \
 	        -Wno-address-of-packed-member -Wno-tautological-compare \
 	        -Wno-unknown-warning-option \
-	        $(EXTRA_CFLAGS) -c $< -o -| $(LLC) -march=bpf -mcpu=v2 -filetype=obj -o $@
+	        --target=bpf -mcpu=v2 -Xclang -target-feature -Xclang +alu32 \
+	        $(EXTRA_CFLAGS) -c $< -o $@
 
 $(RBPF_BINS): %.bin:%.o
 	$(RBPF_GENRBF) -d generate $< $@

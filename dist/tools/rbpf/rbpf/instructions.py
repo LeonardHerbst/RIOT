@@ -9,6 +9,7 @@ LDDW = namedtuple('LDDW', 'opcode registers offset immediate_l null1 null2 null3
 LDDW_OPCODE = 0x18
 LDDWD_OPCODE = 0xB8
 LDDWR_OPCODE = 0xD8
+LDDWB_OPCODE = 0xF8
 
 
 class Instruction(object):
@@ -132,14 +133,28 @@ class AddImmInstruction(AluImmInstruction):
     OPCODE = 0x07
 
 
+class AddWInstruction(AluImmInstruction):
+    OPERAND = '+(u32)'
+    OPCODE = 0xc
+
+
+class AddWImmInstruction(AluImmInstruction):
+    OPERAND = '+(u32)'
+    OPCODE = 0x04
+
+
 class AddInstruction(AluInstruction):
     OPERAND = '+'
     OPCODE = 0x0f
 
-
 class SubImmInstruction(AluImmInstruction):
     OPERAND = '-'
     OPCODE = 0x17
+
+
+class SubWImmInstruction(AluImmInstruction):
+    OPERAND = ('-(u32)')
+    OPCODE = 0x1c
 
 
 class SubInstruction(AluInstruction):
@@ -181,6 +196,9 @@ class AndImmInstruction(AluImmInstruction):
     OPERAND = '&'
     OPCODE = 0x57
 
+class AndWImmInstruction(AluImmInstruction):
+    OPERAND = '&(u32)'
+    OPCODE = 0x54
 
 class AndInstruction(AluInstruction):
     OPERAND = '&'
@@ -212,8 +230,14 @@ class NegInstruction(AluInstruction):
     OPCODE = 0x87
 
     def asm_print(self):
-        return f"r{self.dst_register} = -{self.src_register}"
+        return f"r{self.dst_register} = ~{self.src_register}"
 
+class NegWInstruction(AluInstruction):
+    OPERAND = '-'
+    OPCODE = 0x84
+
+    def asm_print(self):
+        return f"r{self.dst_register} = ~{self.src_register}"
 
 class ModImmInstruction(AluImmInstruction):
     OPERAND = '%'
@@ -240,9 +264,19 @@ class MovImmInstruction(AluImmInstruction):
     OPCODE = 0xb7
 
 
+class MovDwImmInstruction(AluImmInstruction):
+    OPERAND = '(u64)'
+    OPCODE = 0xb4
+
+
 class MovInstruction(AluInstruction):
     OPERAND = ''
     OPCODE = 0xbf
+
+
+class MovDwInstruction(AluInstruction):
+    OPERAND = '(u64)'
+    OPCODE = 0xbc
 
 
 class ARSHImmInstruction(AluImmInstruction):
@@ -657,8 +691,11 @@ class ReturnInstruction(Instruction):
 
 INSTRUCTIONS = {
     AddImmInstruction.OPCODE: AddImmInstruction,
+    AddWInstruction.OPCODE: AddWInstruction,
+    AddWImmInstruction.OPCODE: AddWImmInstruction,
     AddInstruction.OPCODE: AddInstruction,
     SubImmInstruction.OPCODE: SubImmInstruction,
+    SubWImmInstruction.OPCODE: SubWImmInstruction,
     SubInstruction.OPCODE: SubInstruction,
     MulImmInstruction.OPCODE: MulImmInstruction,
     MulInstruction.OPCODE: MulInstruction,
@@ -667,6 +704,7 @@ INSTRUCTIONS = {
     OrImmInstruction.OPCODE: OrImmInstruction,
     OrInstruction.OPCODE: OrInstruction,
     AndImmInstruction.OPCODE: AndImmInstruction,
+    AndWImmInstruction.OPCODE: AndWImmInstruction,
     AndInstruction.OPCODE: AndInstruction,
     LSHImmInstruction.OPCODE: LSHImmInstruction,
     LSHInstruction.OPCODE: LSHInstruction,
@@ -678,7 +716,9 @@ INSTRUCTIONS = {
     XorImmInstruction.OPCODE: XorImmInstruction,
     XorInstruction.OPCODE: XorInstruction,
     MovImmInstruction.OPCODE: MovImmInstruction,
+    MovDwImmInstruction.OPCODE: MovDwImmInstruction,
     MovInstruction.OPCODE: MovInstruction,
+    MovDwInstruction.OPCODE: MovDwInstruction,
     ARSHImmInstruction.OPCODE: ARSHImmInstruction,
     ARSHInstruction.OPCODE: ARSHInstruction,
     LDDWInstruction.OPCODE: LDDWInstruction,

@@ -2,6 +2,8 @@ import struct
 import logging
 from collections import namedtuple
 from elftools.elf.elffile import ELFFile
+from executing.executing import sections_match
+
 from rbpf import instructions
 import itertools
 
@@ -177,6 +179,8 @@ class RBF(object):
             return instructions.LDDWR_OPCODE
         elif section == DATA:
             return instructions.LDDWD_OPCODE
+        else:
+            raise ValueError(f"Unknown section: {section}")
 
     @staticmethod
     def _patch_text(text, elffile, relocation):
@@ -192,6 +196,13 @@ class RBF(object):
         elif symbol.entry.st_info.type == 'STT_OBJECT':
             section_name = elffile.get_section(symbol.entry.st_shndx).name
             offset = symbol.entry.st_value
+        elif symbol.entry.st_info.type == 'STT_FUNC':
+            raise NotImplementedError
+        elif symbol.entry.st_info.type == 'STT_NOTYPE':
+            return
+        else:
+            raise NotImplementedError
+
         opcode = RBF._get_section_lddw_opcode(section_name)
         if text[location] != instructions.LDDW_OPCODE:
             logging.error(f"No LDDW instruction at {hex(location)}")
@@ -258,9 +269,14 @@ class RBF(object):
                 logging.debug(relocation.entry)
                 entry = relocation.entry
                 symbol = symbols.get_symbol(entry['r_info_sym'])
-                if symbol.entry['st_info']['type'] == 'STT_SECTION':
+                if symbol.entry['st_info']['type'] == 'STT_NOTYPE':
+                    name = symbol.name
+                    logging.info(f"relocation at instruction {hex(entry['r_offset'])} for symbol {name} (NOTYPE) at offset {symbol.entry.st_value}")
+                elif symbol.entry['st_info']['type'] == 'STT_SECTION':
                     name = elffile.get_section(symbol.entry['st_shndx']).name
-                    logging.info(f"relocation at instruction {hex(entry['r_offset'])} for section {name} at offset {symbol.entry.st_value}")
+                    logging.info(f"relocation of section {name} at offset {symbol.entry.st_value}")
+                    if name == '.bss':
+                        continue
                 else:
                     name = symbol.name
                     section = elffile.get_section(symbol.entry.st_shndx)
