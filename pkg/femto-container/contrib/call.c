@@ -29,6 +29,10 @@
 #include "ztimer.h"
 #endif
 
+#ifdef MODULE_RANDOM
+#include "random.h"
+#endif /* ifdef MODULE_RANDOM */
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
@@ -177,10 +181,20 @@ uint32_t f12r_vm_ztimer_periodic_wakeup(f12r_t *f12r, uint64_t *regs)
     return 0;
 }
 #endif
+#ifdef MODULE_RANDOM
+uint32_t f12r_vm_rand(f12r_t *f12r, uint64_t *regs)
+{
+    (void) f12r;
+    (void) regs;
+    return random_uint32();
+}
+#endif
 
+#include <stdio.h>
 
 f12r_call_t f12r_get_external_call(uint32_t num)
 {
+    printf("CALL with number: %lu\n", num);
     switch(num) {
         case BPF_FUNC_BPF_PRINTF:
             return &f12r_vm_printf;
@@ -216,6 +230,10 @@ f12r_call_t f12r_get_external_call(uint32_t num)
             return &f12r_vm_ztimer_now;
         case BPF_FUNC_BPF_ZTIMER_PERIODIC_WAKEUP:
             return &f12r_vm_ztimer_periodic_wakeup;
+#endif
+#ifdef MODULE_RANDOM
+        case BPF_FUNC_BPF_RAND:
+            return &f12r_vm_rand;
 #endif
         default:
             return NULL;

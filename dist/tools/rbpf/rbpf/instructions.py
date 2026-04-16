@@ -6,6 +6,11 @@ from collections import namedtuple
 LDDW_STRUCT = struct.Struct('<BBHiBBHi')
 LDDW = namedtuple('LDDW', 'opcode registers offset immediate_l null1 null2 null3 immediate_h')
 
+CALL_STRUCT = struct.Struct('<BBHi')
+CALL = namedtuple('CALL', 'opcode registers offset immediate')
+
+Call_OPCODE = 0x85
+
 LDDW_OPCODE = 0x18
 LDDWD_OPCODE = 0xB8
 LDDWR_OPCODE = 0xD8
@@ -167,6 +172,11 @@ class MulImmInstruction(AluImmInstruction):
     OPCODE = 0x27
 
 
+class MulWImmInstruction(AluImmInstruction):
+    OPERAND = '*(u32)'
+    OPCODE = 0x24
+
+
 class MulInstruction(AluInstruction):
     OPERAND = '*'
     OPCODE = 0x2f
@@ -175,6 +185,10 @@ class MulInstruction(AluInstruction):
 class DivImmInstruction(AluImmInstruction):
     OPERAND = '/'
     OPCODE = 0x37
+
+class DivWImmInstruction(AluImmInstruction):
+    OPERAND = '/(u32)'
+    OPCODE = 0x34
 
 
 class DivInstruction(AluInstruction):
@@ -191,18 +205,29 @@ class OrInstruction(AluInstruction):
     OPERAND = '|'
     OPCODE = 0x4f
 
+class OrWInstruction(AluInstruction):
+    OPERAND = '|'
+    OPCODE = 0x4c
+
 
 class AndImmInstruction(AluImmInstruction):
     OPERAND = '&'
     OPCODE = 0x57
 
+
 class AndWImmInstruction(AluImmInstruction):
     OPERAND = '&(u32)'
     OPCODE = 0x54
 
+
 class AndInstruction(AluInstruction):
     OPERAND = '&'
     OPCODE = 0x5f
+
+
+class AndWInstruction(AluInstruction):
+    OPERAND = '&'
+    OPCODE = 0x5c
 
 
 class LSHImmInstruction(AluImmInstruction):
@@ -213,6 +238,11 @@ class LSHImmInstruction(AluImmInstruction):
 class LSHInstruction(AluInstruction):
     OPERAND = '<<'
     OPCODE = 0x6f
+
+
+class LSHWInstruction(AluInstruction):
+    OPERAND = '<<'
+    OPCODE = 0x64
 
 
 class RSHImmInstruction(AluImmInstruction):
@@ -230,7 +260,14 @@ class NegInstruction(AluInstruction):
     OPCODE = 0x87
 
     def asm_print(self):
-        return f"r{self.dst_register} = ~{self.src_register}"
+        return f"r{self.dst_register} = -{self.src_register}"
+
+class NegWInstruction(AluInstruction):
+    OPERAND = '-'
+    OPCODE = 0x84
+
+    def asm_print(self):
+        return f"r{self.dst_register} = -{self.src_register}"
 
 class NegWInstruction(AluInstruction):
     OPERAND = '-'
@@ -283,6 +320,9 @@ class ARSHImmInstruction(AluImmInstruction):
     OPERAND = '>>'
     OPCODE = 0xc7
 
+class ARSHWImmInstruction(AluImmInstruction):
+    OPERAND = '>>'
+    OPCODE = 0xc4
 
 class ARSHInstruction(AluInstruction):
     OPERAND = '>>'
@@ -698,19 +738,25 @@ INSTRUCTIONS = {
     SubWImmInstruction.OPCODE: SubWImmInstruction,
     SubInstruction.OPCODE: SubInstruction,
     MulImmInstruction.OPCODE: MulImmInstruction,
+    MulWImmInstruction.OPCODE : MulWImmInstruction,
     MulInstruction.OPCODE: MulInstruction,
     DivImmInstruction.OPCODE: DivImmInstruction,
+    DivWImmInstruction.OPCODE: DivWImmInstruction,
     DivInstruction.OPCODE: DivInstruction,
     OrImmInstruction.OPCODE: OrImmInstruction,
     OrInstruction.OPCODE: OrInstruction,
+    OrWInstruction.OPCODE: OrWInstruction,
     AndImmInstruction.OPCODE: AndImmInstruction,
     AndWImmInstruction.OPCODE: AndWImmInstruction,
     AndInstruction.OPCODE: AndInstruction,
+    AndWInstruction.OPCODE: AndWInstruction,
     LSHImmInstruction.OPCODE: LSHImmInstruction,
     LSHInstruction.OPCODE: LSHInstruction,
+    LSHWInstruction.OPCODE: LSHWInstruction,
     RSHImmInstruction.OPCODE: RSHImmInstruction,
     RSHInstruction.OPCODE: RSHInstruction,
     NegInstruction.OPCODE: NegInstruction,
+    NegWInstruction.OPCODE: NegWInstruction,
     ModImmInstruction.OPCODE: ModImmInstruction,
     ModInstruction.OPCODE: ModInstruction,
     XorImmInstruction.OPCODE: XorImmInstruction,
@@ -720,6 +766,7 @@ INSTRUCTIONS = {
     MovInstruction.OPCODE: MovInstruction,
     MovDwInstruction.OPCODE: MovDwInstruction,
     ARSHImmInstruction.OPCODE: ARSHImmInstruction,
+    ARSHWImmInstruction.OPCODE: ARSHWImmInstruction,
     ARSHInstruction.OPCODE: ARSHInstruction,
     LDDWInstruction.OPCODE: LDDWInstruction,
     LDXDWInstruction.OPCODE: LDXDWInstruction,

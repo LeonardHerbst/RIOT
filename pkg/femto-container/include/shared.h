@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "femtocontainer/builtin_shared.h"
+// #include "femtocontainer/builtin_shared.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +49,9 @@ enum {
     /* ZTIMER */
     BPF_FUNC_BPF_ZTIMER_NOW = 0x60,
     BPF_FUNC_BPF_ZTIMER_PERIODIC_WAKEUP = 0x61,
+
+    /* RANDOM */
+    BPF_FUNC_BPF_RAND = 0x70,
 };
 
 /* Helper structs */

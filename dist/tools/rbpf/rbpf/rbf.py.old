@@ -6,6 +6,7 @@ from unittest import case
 from elftools.elf.elffile import ELFFile
 from executing.executing import sections_match
 from pipenv import patched
+from requests.packages import target
 
 from rbpf import instructions
 import itertools
@@ -194,7 +195,7 @@ class RBF(object):
             raise ValueError(f"Relocation in unsupported section: {section}")
 
     @staticmethod
-    def _patch_text(text, elffile, relocation, intersection_offset):
+    def _patch_text(text, elffile, relocation):
         entry = relocation.entry
         location = entry.r_offset
         symbol = elffile.get_section_by_name(SYMBOLS).get_symbol(entry.r_info_sym)
@@ -203,10 +204,7 @@ class RBF(object):
         if r_type == 'STT_SECTION' or r_type == 'STT_OBJECT':
             section_name = elffile.get_section(symbol.entry.st_shndx).name
             offset = symbol.entry.st_value
-            is_offset = intersection_offset[section_name]
-            if is_offset > 0:
-                logging.info(f"Symbol was located in a merged section. Applying inter-section offset {is_offset}")
-            offset += is_offset
+            offset +=
             opcode = RBF._get_section_lddw_opcode(section_name)
             if text[location] != instructions.LDDW_OPCODE:
                 raise ValueError(f"No LDDW instruction at {hex(location)}")
@@ -307,10 +305,13 @@ class RBF(object):
             DATA: bytearray(),
         }
 
-        intersection_offset = {}
-
+        intersection_offset = {
+            TEXT: {},
+            RODATA: {},
+            DATA: {},
+        }
+        
         for section in elffile.iter_sections():
-            logging.info(f"Processing {section.name}")
             if section.name.startswith(TEXT):
                 elf_sections[TEXT].append(section)
             elif section.name.startswith(DATA):
@@ -324,7 +325,7 @@ class RBF(object):
             if elf_sections[c]:
                 logging.info(f"Merging {len(elf_sections[c])} section(s) into {c}: [{', '.join(['"' + x.name + '"' for x in elf_sections[c]])}]")
                 for section in elf_sections[c]:
-                    intersection_offset[section.name] = len(data[c])
+                    intersection_offset[c][section.name] = len(data[c])
                     data[c] += section.data()
 
         # Read data from the input file and construct the RBF object
@@ -368,7 +369,7 @@ class RBF(object):
             sym_str = SYMBOL(offset, flags, text_offset)
             symbol_structs.append(sym_str)
             logging.debug(f"symbol {sym_str} generated with {name} and appended at {offset}")
-        logging.info(f"Total rodata size: {len(data[RODATA])}. Total data size: {len(data[DATA])}")
+        logging.info(f"Total rodata size: {len(data[RODATA])}. Total data size: {len(data)}")
 
         if relocations:
             for relocation in relocations.iter_relocations():
@@ -386,6 +387,6 @@ class RBF(object):
                     section = elffile.get_section(symbol.entry.st_shndx)
                     logging.info(f"relocation at instruction {hex(entry['r_offset'])} for symbol {name} in {section.name} at {symbol.entry.st_value}")
 
-                RBF._patch_text(data[TEXT], elffile, relocation, intersection_offset)
+                RBF._patch_text(data[TEXT], elffile, relocation)
 
         return RBF(data=data[DATA], bss_len=bss_len, rodata=data[RODATA], text=data[TEXT], symbols=symbol_structs)
