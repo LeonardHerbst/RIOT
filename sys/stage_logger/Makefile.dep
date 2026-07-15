@@ -1,0 +1,3 @@
+ifneq (,$(filter event_logger,$(USEMODULE)))
+  USEMODULE += ztimer_msec
+endif
