@@ -76,7 +76,7 @@ static int _on_response(
     printf(" (%" PRIuSIZE " bytes)\n", response->payload_size);
 
     /* Check Content-Format for text/plain so we can print the payload as text instead of hex. */
-    unicoap_content_format_t format;
+    unicoap_content_format_code_t format;
     if ((error = unicoap_options_get_content_format(response->options, &format)) >= 0
          && unicoap_content_format_is_human_readable(format)) {
         printf("text response: '%.*s'\n", (int)response->payload_size, (char*)response->payload);
@@ -106,7 +106,7 @@ static int _cli(int argc, char** argv) {
     } else {
         printf("error: unsupported method '%s'\n", argv[1]);
         goto help;
-    } 
+    }
 
     /* Track where URI argument is expected. */
     int uri_arg_ix = 2;
@@ -151,12 +151,12 @@ static int _cli(int argc, char** argv) {
         return res;
     }
     return 0;
-    
+
 help:
     return _print_usage(argv);
 }
 
-SHELL_COMMAND(unicoap, "unicoap sample client", _cli) 
+SHELL_COMMAND(unicoap, "unicoap sample client", _cli)
 
 int main(void) {
     /* By default, unicoap_init() is automatically called for you before main().
