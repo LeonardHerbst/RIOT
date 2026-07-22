@@ -78,7 +78,7 @@ static int _on_response(
         unicoap_message_payload_get_size(response));
 
     /* Check Content-Format for text/plain so we can print the payload as text instead of hex. */
-    unicoap_content_format_t format;
+    unicoap_content_format_code_t format;
     if ((error = unicoap_options_get_content_format(response->options, &format)) >= 0
         && unicoap_content_format_is_human_readable(format)) {
         printf("text response: '%.*s'\n", 
