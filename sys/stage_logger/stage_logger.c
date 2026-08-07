@@ -11,7 +11,7 @@ int stlg_init(stlg_state_t *stlgs, ztimer_clock_t *clock, const char **stages, z
     stlgs->timestamps = timestamps;
     stlgs->n_stages = n_stages;
 
-    memset(stlgs->timestamps, 0, stlgs->n_stages);
+    memset(stlgs->timestamps, 0, stlgs->n_stages * sizeof(ztimer_now));
     return 0;
 }
 
@@ -46,7 +46,7 @@ ztimer_now_t stlg_get_ts(stlg_state_t *stlgs, char *stage)
     return stlgs->timestamps[stage_index];
 }
 
-void stlg_print_stages(stlg_state_t *stlgs)
+void stlg_as_json(stlg_state_t *stlgs)
 {
     printf("{");
     for (size_t i = 0; i < stlgs->n_stages; i++) {
@@ -54,4 +54,14 @@ void stlg_print_stages(stlg_state_t *stlgs)
         printf((i + 1 < stlgs->n_stages) ? ", ": "");
     }
     printf("}\n");
+}
+
+void stlg_as_csv(stlg_state_t *stlgs)
+{
+    for (size_t i = 0; i < stlgs->n_stages; i++) {
+        printf("%s%s", stlgs->stages[i], i + 1 < stlgs->n_stages ? ";": "\n");
+    }
+    for (size_t i = 0; i < stlgs->n_stages; i++) {
+        printf("%lu%s", (unsigned long int) stlgs->timestamps[i], i + 1 < stlgs->n_stages ? ";": "\n");
+    }
 }

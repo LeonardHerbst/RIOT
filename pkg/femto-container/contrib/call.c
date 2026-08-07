@@ -194,7 +194,7 @@ uint32_t f12r_vm_rand(f12r_t *f12r, uint64_t *regs)
 
 f12r_call_t f12r_get_external_call(uint32_t num)
 {
-    printf("CALL with number: %lu\n", num);
+    printf("CALL with number: %lu\n", (long unsigned int) num);
     switch(num) {
         case BPF_FUNC_BPF_PRINTF:
             return &f12r_vm_printf;

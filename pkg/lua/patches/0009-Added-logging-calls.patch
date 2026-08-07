@@ -1,101 +1,14 @@
-From 82ff8181244a0c0e0dc7b866c191a23ea36c83c6 Mon Sep 17 00:00:00 2001
+From 01652ec2961b10502b57824adb15478b6f112965 Mon Sep 17 00:00:00 2001
 From: LeonardHerbst <leonard.herbst@tu-dresden.de>
 Date: Fri, 26 Jun 2026 11:21:24 +0200
 Subject: [PATCH] Added logging calls
 
 ---
- lapi.c    | 3 +++
- lauxlib.c | 6 +++++-
- ldo.c     | 4 +++-
- lparser.c | 5 +++++
- 4 files changed, 16 insertions(+), 2 deletions(-)
+ lparser.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/lapi.c b/lapi.c
-index 1c4d07dd..08453b34 100644
---- a/lapi.c
-+++ b/lapi.c
-@@ -29,6 +29,7 @@
- #include "lundump.h"
- #include "lvm.h"
- 
-+#include "lua_stlg.h"
- 
- 
- const char lua_ident[] =
-@@ -990,6 +991,7 @@ LUA_API int lua_pcallk (lua_State *L, int nargs, int nresults, int errfunc,
- 
- LUA_API int lua_load (lua_State *L, lua_Reader reader, void *data,
-                       const char *chunkname, const char *mode) {
-+  LOG_STAGE(lua_load_start)
-   ZIO z;
-   int status;
-   lua_lock(L);
-@@ -1008,6 +1010,7 @@ LUA_API int lua_load (lua_State *L, lua_Reader reader, void *data,
-     }
-   }
-   lua_unlock(L);
-+  LOG_STAGE(lua_load_end)
-   return status;
- }
- 
-diff --git a/lauxlib.c b/lauxlib.c
-index 3767439f..c74a8e19 100644
---- a/lauxlib.c
-+++ b/lauxlib.c
-@@ -27,6 +27,7 @@
- 
- #include "lauxlib.h"
- 
-+#include "lua_stlg.h"
- 
- /*
- ** {======================================================
-@@ -763,10 +764,13 @@ static const char *getS (lua_State *L, void *ud, size_t *size) {
- 
- LUALIB_API int luaL_loadbufferx (lua_State *L, const char *buff, size_t size,
-                                  const char *name, const char *mode) {
-+  LOG_STAGE(luaL_loadbufferx_start)
-   LoadS ls;
-   ls.s = buff;
-   ls.size = size;
--  return lua_load(L, getS, &ls, name, mode);
-+  int ret = lua_load(L, getS, &ls, name, mode);
-+  LOG_STAGE(luaL_loadbufferx_end)
-+  return ret;
- }
- 
- 
-diff --git a/ldo.c b/ldo.c
-index 13387516..1ddd936d 100644
---- a/ldo.c
-+++ b/ldo.c
-@@ -33,7 +33,7 @@
- #include "lvm.h"
- #include "lzio.h"
- 
--
-+#include "lua_stlg.h"
- 
- #define errorstatus(s)	((s) > LUA_YIELD)
- 
-@@ -764,6 +764,7 @@ static void checkmode (lua_State *L, const char *mode, const char *x) {
- 
- 
- static void f_parser (lua_State *L, void *ud) {
-+  LOG_STAGE(f_parser_start)
-   LClosure *cl;
-   struct SParser *p = cast(struct SParser *, ud);
-   int c = zgetc(p->z);  /* read first character */
-@@ -777,6 +778,7 @@ static void f_parser (lua_State *L, void *ud) {
-   }
-   lua_assert(cl->nupvalues == cl->p->sizeupvalues);
-   luaF_initupvals(L, cl);
-+  LOG_STAGE(f_parser_end)
- }
- 
- 
 diff --git a/lparser.c b/lparser.c
-index 5894d8ff..efa95935 100644
+index 5894d8ff..5c24f859 100644
 --- a/lparser.c
 +++ b/lparser.c
 @@ -27,6 +27,7 @@
@@ -110,31 +23,17 @@ index 5894d8ff..efa95935 100644
  ** upvalue named LUA_ENV
  */
  static void mainfunc (LexState *ls, FuncState *fs) {
-+  LOG_STAGE(mainfunc_start)
++  LOG_STAGE(parsecompile_start);
    BlockCnt bl;
    expdesc v;
    open_func(ls, fs, &bl);
-@@ -1620,11 +1622,13 @@ static void mainfunc (LexState *ls, FuncState *fs) {
+@@ -1620,6 +1622,7 @@ static void mainfunc (LexState *ls, FuncState *fs) {
    statlist(ls);  /* parse main body */
    check(ls, TK_EOS);
    close_func(ls);
-+  LOG_STAGE(mainfunc_end)
++  LOG_STAGE(parsecompile_end);
  }
  
- 
- LClosure *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff,
-                        Dyndata *dyd, const char *name, int firstchar) {
-+  LOG_STAGE(luaY_parser_start)
-   LexState lexstate;
-   FuncState funcstate;
-   LClosure *cl = luaF_newLclosure(L, 1);  /* create main closure */
-@@ -1645,6 +1649,7 @@ LClosure *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff,
-   /* all scopes should be correctly finished */
-   lua_assert(dyd->actvar.n == 0 && dyd->gt.n == 0 && dyd->label.n == 0);
-   L->top--;  /* remove scanner's table */
-+  LOG_STAGE(luaY_parser_end)
-   return cl;  /* closure is on the stack, too */
- }
  
 -- 
 2.51.0

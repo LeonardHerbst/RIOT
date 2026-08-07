@@ -1,0 +1,87 @@
+From 8b54ed00633cdd904166b9e7308181a4d8d8f660 Mon Sep 17 00:00:00 2001
+From: Leonard Herbst <leonard.herbst@tu-dresden.de>
+Date: Thu, 6 Aug 2026 16:32:16 +0200
+Subject: [PATCH] core/iwasm: add stage logger instrumentation
+
+---
+ core/iwasm/interpreter/wasm_loader.c  | 6 ++++++
+ core/iwasm/interpreter/wasm_runtime.c | 4 ++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/core/iwasm/interpreter/wasm_loader.c b/core/iwasm/interpreter/wasm_loader.c
+index 785b2898..d8376a59 100644
+--- a/core/iwasm/interpreter/wasm_loader.c
++++ b/core/iwasm/interpreter/wasm_loader.c
+@@ -27,6 +27,8 @@
+ #include "../compilation/aot_llvm.h"
+ #endif
+ 
++#include "wamr_stlg.h"
++
+ #ifndef TRACE_WASM_LOADER
+ #define TRACE_WASM_LOADER 0
+ #endif
+@@ -5825,6 +5827,7 @@ load_from_sections(WASMModule *module, WASMSection *sections,
+         section = section->next;
+     }
+ 
++    LOG_STAGE(parse_sections_start);
+     section = sections;
+     while (section) {
+         buf = section->section_body;
+@@ -5929,6 +5932,7 @@ load_from_sections(WASMModule *module, WASMSection *sections,
+ 
+         section = section->next;
+     }
++    LOG_STAGE(parse_sections_end);
+ 
+     module->aux_data_end_global_index = (uint32)-1;
+     module->aux_heap_base_global_index = (uint32)-1;
+@@ -6135,6 +6139,7 @@ load_from_sections(WASMModule *module, WASMSection *sections,
+     handle_table = wasm_interp_get_handle_table();
+ #endif
+ 
++    LOG_STAGE(prepare_functions_start);
+     for (i = 0; i < module->function_count; i++) {
+         WASMFunction *func = module->functions[i];
+         if (!wasm_loader_prepare_bytecode(module, func, i, error_buf,
+@@ -6149,6 +6154,7 @@ load_from_sections(WASMModule *module, WASMSection *sections,
+             return false;
+         }
+     }
++    LOG_STAGE(prepare_functions_end);
+ 
+     if (!module->possible_memory_grow) {
+         WASMMemoryImport *memory_import;
+diff --git a/core/iwasm/interpreter/wasm_runtime.c b/core/iwasm/interpreter/wasm_runtime.c
+index 0d4d0b37..ac59a800 100644
+--- a/core/iwasm/interpreter/wasm_runtime.c
++++ b/core/iwasm/interpreter/wasm_runtime.c
+@@ -31,6 +31,8 @@
+ #include "../aot/aot_runtime.h"
+ #endif
+ 
++#include "wamr_stlg.h"
++
+ static void
+ set_error_buf(char *error_buf, uint32 error_buf_size, const char *string)
+ {
+@@ -2159,6 +2161,7 @@ wasm_instantiate(WASMModule *module, WASMModuleInstance *parent,
+                  uint32 heap_size, uint32 max_memory_pages, char *error_buf,
+                  uint32 error_buf_size)
+ {
++    LOG_STAGE(instantiate_start);
+     WASMModuleInstance *module_inst;
+     WASMGlobalInstance *globals = NULL, *global;
+     WASMTableInstance *first_table;
+@@ -3078,6 +3081,7 @@ wasm_instantiate(WASMModule *module, WASMModuleInstance *parent,
+ #endif
+ 
+     (void)global_data_end;
++    LOG_STAGE(instantiate_end);
+     return module_inst;
+ 
+ fail:
+-- 
+2.51.0
+

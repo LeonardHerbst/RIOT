@@ -19,7 +19,9 @@ int stlg_record_stage(stlg_state_t *stlgs, char *stage);
 
 ztimer_now_t stlg_get_ts(stlg_state_t *stlgs, char *stage);
 
-void stlg_print_stages(stlg_state_t *stlgs);
+void stlg_as_json(stlg_state_t *stlgs);
+
+void stlg_as_csv(stlg_state_t *stlgs);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,70 @@
+From 3272992f4d9bf1a04c798129a1801751e7a6c402 Mon Sep 17 00:00:00 2001
+From: LeonardHerbst <leonard.herbst@tu-dresden.de>
+Date: Thu, 6 Aug 2026 11:39:52 +0200
+Subject: [PATCH] Inserted logging statement
+
+---
+ jerry-core/parser/js/js-parser.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/jerry-core/parser/js/js-parser.c b/jerry-core/parser/js/js-parser.c
+index 94b26e3f..d07dc334 100644
+--- a/jerry-core/parser/js/js-parser.c
++++ b/jerry-core/parser/js/js-parser.c
+@@ -23,6 +23,8 @@
+ 
+ #if ENABLED (JERRY_PARSER)
+ 
++#include "jerryscript_stlg.h"
++
+ JERRY_STATIC_ASSERT ((int) ECMA_PARSE_STRICT_MODE == (int) PARSER_IS_STRICT,
+                      ecma_parse_strict_mode_must_be_equal_to_parser_is_strict);
+ 
+@@ -1902,11 +1904,13 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
+   }
+ #endif /* ENABLED (JERRY_PARSER_DUMP_BYTE_CODE) */
+ 
++  LOG_STAGE(scan_all_start);
+   scanner_scan_all (&context,
+                     arg_list_p,
+                     arg_list_p + arg_list_size,
+                     source_p,
+                     source_p + source_size);
++  LOG_STAGE(scan_all_end);
+ 
+   if (JERRY_UNLIKELY (context.error != PARSER_ERR_NO_ERROR))
+   {
+@@ -1963,6 +1967,7 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
+ 
+     if (arg_list_p != NULL)
+     {
++      LOG_STAGE(parse_function_args_start);
+       parser_parse_function_arguments (&context, LEXER_EOS);
+ 
+       JERRY_ASSERT (context.next_scanner_info_p->type == SCANNER_TYPE_END_ARGUMENTS);
+@@ -1974,6 +1979,7 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
+       context.column = 1;
+ 
+       lexer_next_token (&context);
++      LOG_STAGE(parse_function_args_end);
+     }
+ #if ENABLED (JERRY_MODULE_SYSTEM)
+     else if (parse_opts & ECMA_PARSE_MODULE)
+@@ -1998,10 +2004,14 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
+       }
+ #endif /* ENABLED (JERRY_ESNEXT) */
+ 
++      LOG_STAGE(create_variables_start);
+       scanner_create_variables (&context, SCANNER_CREATE_VARS_IS_SCRIPT);
++      LOG_STAGE(create_variables_end);
+     }
+ 
++    LOG_STAGE(parse_statement_start);
+     parser_parse_statements (&context);
++    LOG_STAGE(parse_statement_end);
+ 
+     JERRY_ASSERT (context.last_statement.current_p == NULL);
+ 
+-- 
+2.51.0
+

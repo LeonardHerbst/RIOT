@@ -8,8 +8,12 @@ IWASM_INCLUDES += ${IWASM_ROOT}/include \
                    #
 
 INCLUDES += $(addprefix -I,${IWASM_INCLUDES})
+INCLUDES += -isystem$(PKGDIRBASE)/wamr
+INCLUDES += -isystem$(RIOTPKG)/wamr/include
 
 ARCHIVES += $(BINDIR)/libwamr.a
+
+DIRS += $(RIOTPKG)/wamr/contrib
 
 # clang stumbles upon the asm syntax, likely it ignores -mthumb
 TOOLCHAINS_BLACKLIST += llvm
