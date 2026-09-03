@@ -1,0 +1,3 @@
+INCLUDES += -isystem$(PKGDIRBASE)/uvm32/uvm32
+INCLUDES += -isystem$(PKGDIRBASE)/uvm32/common
+INCLUDES += -isystem$(RIOTPKG)/uvm32/include
