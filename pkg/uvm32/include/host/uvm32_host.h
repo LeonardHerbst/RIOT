@@ -41,6 +41,14 @@ static uint32_t uvm32_instance_init(uvm32_instance_t* instance)
     instance->flags = 0;
     uvm32_init(&instance->state);
     instance->flags |= UVM32_FLAG_INIT_DONE;
+    return UVM32_OK;
+}
+
+static uint32_t uvm32_instance_load(uvm32_instance_t* instance)
+{
+    if ((instance->flags & UVM32_FLAG_INIT_DONE) == 0) {
+        return UVM32_MISSING_INIT;
+    }
     if (!uvm32_load(&instance->state, instance->program, (int) instance->program_len)){
         return UVM32_INSUFFICIENT_MEMORY;
     }
