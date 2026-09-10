@@ -31,7 +31,6 @@ UVM32_SRC ?= $(CURDIR)/program/$(PROGRAM).c
 all: $(BLOBS)
 	@echo Building the binary for $(PROGRAM)
 
-PHONY: program.bin
 program.bin: $(UVM32_SRC)
 	make -C $(CURDIR)/program -f $(UVM32_MK) UVM32_SRC=$(UVM32_SRC) UVM32_CFLAGS="-DUVM32_DEFAULT_SYSCALLS"
 	cp $(CURDIR)/program/$(PROGRAM).bin $(CURDIR)/program.bin

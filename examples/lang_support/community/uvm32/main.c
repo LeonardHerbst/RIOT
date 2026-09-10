@@ -14,7 +14,12 @@ int main(void) {
 
     ret = uvm32_instance_init(&instance);
     if (ret != 0) {
-        printf("Error initializing vm or loading the binary!\n");
+        printf("Error initializing vm!\n");
+    }
+
+    ret = uvm32_instance_load(&instance);
+    if (ret != 0) {
+        printf("Error loading the binary!\n");
     }
 
     ret = uvm32_instance_execute(&instance);
