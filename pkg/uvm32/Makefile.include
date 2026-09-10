@@ -1,3 +1,5 @@
 INCLUDES += -isystem$(PKGDIRBASE)/uvm32/uvm32
-INCLUDES += -isystem$(PKGDIRBASE)/uvm32/common
-INCLUDES += -isystem$(RIOTPKG)/uvm32/include
+INCLUDES += -isystem$(RIOTPKG)/uvm32/include/shared
+INCLUDES += -isystem$(RIOTPKG)/uvm32/include/host
+
+PSEUDOMODULES += uvm32_default_syscalls

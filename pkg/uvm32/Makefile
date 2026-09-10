@@ -5,17 +5,7 @@ PKG_LICENSE=MIT
 
 include $(RIOTBASE)/pkg/pkg.mk
 
-UVM32_MEMORY_SIZE ?= 512
-
-CFLAGS += -Wall -Wno-sign-compare -O2 -DUVM32_ERROR_STRINGS \
-					-DUVM32_MEMORY_SIZE=$(UVM32_MEMORY_SIZE)
-
-# gcc \
-# 	$(CFLAGS) \
-# 	-DUVM32_ERROR_STRINGS \
-# 	-DUVM32_MEMORY_SIZE=512 \
-# 	-O2 -I${TOPDIR}/uvm32 -I${TOPDIR}/common \
-# 	-o host-mini ${TOPDIR}/uvm32/uvm32.c host-mini.c
+CFLAGS += -Wall -Wno-sign-compare -O0
 
 all: $(PKG_NAME).mk
 	$(QQ)"$(MAKE)" -C $(PKG_SOURCE_DIR) -f $(CURDIR)/$(PKG_NAME).mk

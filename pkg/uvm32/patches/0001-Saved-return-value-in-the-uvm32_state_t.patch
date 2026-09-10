@@ -1,0 +1,37 @@
+From 5c3658ae2105e9882c7f014a3ca299c03fd9a4ad Mon Sep 17 00:00:00 2001
+From: LeonardHerbst <leonard.herbst@tu-dresden.de>
+Date: Thu, 10 Sep 2026 13:26:42 +0200
+Subject: [PATCH] Saved return value in the uvm32_state_t
+
+---
+ uvm32/uvm32.c | 1 +
+ uvm32/uvm32.h | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/uvm32/uvm32.c b/uvm32/uvm32.c
+index 8ba18b9..9c0344c 100644
+--- a/uvm32/uvm32.c
++++ b/uvm32/uvm32.c
+@@ -273,6 +273,7 @@ uint32_t uvm32_run(uvm32_state_t *vmst, uvm32_evt_t *evt, uint32_t instr_meter)
+                     // inbuilt syscalls
+                      case UVM32_SYSCALL_HALT:
+                         setStatus(vmst, UVM32_STATUS_ENDED);
++                        vmst->result = vmst->_core.regs[10];
+                     break;
+ #ifdef UVM32_STACK_PROTECTION
+                     case UVM32_SYSCALL_STACKPROTECT: {
+diff --git a/uvm32/uvm32.h b/uvm32/uvm32.h
+index f68e2f2..d50e1f9 100644
+--- a/uvm32/uvm32.h
++++ b/uvm32/uvm32.h
+@@ -152,6 +152,7 @@ typedef struct {
+     bool _extramDirty;                      /*! Flag to indicate VM code has modified extram since last run */
+     uint32_t garbage;                       /*! Used for returning valid pointer when operations fail */
+     bool useBreak;                          /*! produce UVM32_EVT_BREAK */
++    uint32_t result;                        /*! return value of the executed program */
+ } uvm32_state_t;
+ 
+ /*! Initialise a VM instance */
+-- 
+2.53.0
+

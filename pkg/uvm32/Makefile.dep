@@ -1,0 +1,5 @@
+ifneq (,$(filter uvm32_default_syscalls,$(USEMODULE)))
+  USEMODULE += ztimer
+	USEMODULE += ztimer_msec
+	USEMODULE += random
+endif
