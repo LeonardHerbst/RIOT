@@ -14,7 +14,7 @@ UVM32_MK ?= $(RIOTBASE)/makefiles/pkg/uvm32/uvm32_target.mk
 USEPKG += uvm32
 USEMODULE += uvm32_default_syscalls
 
-CFLAGS += -DUVM32_MEMORY_SIZE=9192 -DUVM32_ERROR_STRINGS -DUVM32_DEFAULT_SYSCALLS
+CFLAGS += -DUVM32_MEMORY_SIZE=4096 -DUVM32_ERROR_STRINGS -DUVM32_DEFAULT_SYSCALLS -DTHREAD_STACKSIZE_MAIN=9192
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
