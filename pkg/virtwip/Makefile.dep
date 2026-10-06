@@ -1,0 +1,149 @@
+# lwIP's memory management doesn't seem to work on non 32-bit platforms at the
+# moment.
+FEATURES_REQUIRED_ANY += arch_32bit|arch_64bit
+
+DEFAULT_MODULE += auto_init_virtwip
+USEMODULE += event
+
+ifneq (,$(filter sock_async,$(USEMODULE)))
+  USEMODULE += virtwip_sock_async
+endif
+ifneq (,$(filter sock_ip,$(USEMODULE)))
+  USEMODULE += virtwip_sock_ip
+endif
+ifneq (,$(filter sock_tcp,$(USEMODULE)))
+  USEMODULE += virtwip_sock_tcp
+endif
+ifneq (,$(filter sock_udp,$(USEMODULE)))
+  USEMODULE += virtwip_sock_udp
+endif
+
+# if virtwip_dhcp_auto or virtwip_ipv6 is used, enable link up detection:
+# - virtwip_dhcp_auto needs link up events to trigger the DHCP process
+# - virtwip_ipv6 needs link up events to perform duplicate address detection
+ifneq (,$(filter virtwip_dhcp_auto virtwip_ipv6,$(USEMODULE)))
+  ifneq (,$(filter efm32_eth,$(USEMODULE)))
+    USEMODULE += efm32_eth_link_up
+  endif
+  ifneq (,$(filter lpc1768_eth,$(USEMODULE)))
+    USEMODULE += lpc1768_eth_link_up
+  endif
+  ifneq (,$(filter stm32_eth,$(USEMODULE)))
+    USEMODULE += stm32_eth_link_up
+  endif
+endif
+
+ifneq (,$(filter virtwip_app_lwiperf,$(USEMODULE)))
+  USEMODULE += virtwip_tcp
+  ifneq (,$(filter virtwip_ipv4,$(USEMODULE)))
+    USEMODULE += virtwip_arp
+  endif
+endif
+
+ifneq (,$(filter virtwip_ipv6_autoconfig virtwip_ipv6_mld,$(USEMODULE)))
+  USEMODULE += virtwip_ipv6
+endif
+
+ifneq (,$(filter virtwip_ipv4,$(USEMODULE)))
+  USEMODULE += ipv4
+endif
+
+ifneq (,$(filter virtwip_ipv6,$(USEMODULE)))
+  USEMODULE += ipv6
+  USEMODULE += ipv6_addr
+  USEMODULE += random
+endif
+
+ifneq (,$(filter virtwip_udplite,$(USEMODULE)))
+  USEMODULE += virtwip_udp
+endif
+
+ifneq (,$(filter virtwip_sock_%,$(USEMODULE)))
+  USEMODULE += virtwip_sock
+endif
+
+ifneq (,$(filter virtwip_sock_ip,$(USEMODULE)))
+  USEMODULE += virtwip_raw
+endif
+
+ifneq (,$(filter virtwip_sock_tcp,$(USEMODULE)))
+  USEMODULE += virtwip_tcp
+endif
+
+ifneq (,$(filter virtwip_sock_udp,$(USEMODULE)))
+  USEMODULE += virtwip_udp
+endif
+
+ifneq (,$(filter virtwip_sixlowpan,$(USEMODULE)))
+  USEMODULE += virtwip_ipv6_autoconfig
+  USEMODULE += l2util
+endif
+
+ifneq (,$(filter virtwip_%,$(USEMODULE)))
+  USEPKG += virtwip
+  USEMODULE += core_mbox
+  USEMODULE += virtwip_api
+  USEMODULE += virtwip_contrib
+  USEMODULE += virtwip_core
+  USEMODULE += virtwip_netif
+  USEMODULE += virtwip_netif_init_devs
+  USEMODULE += netdev
+  ifeq (,$(filter virtwip_ipv4 virtwip_ipv6,$(USEMODULE)))
+    USEMODULE += virtwip_ipv4
+  endif
+  ifeq (,$(filter virtwip_tcp virtwip_udp virtwip_udplite,$(USEMODULE)))
+    USEMODULE += virtwip_raw
+  endif
+  ifneq (,$(filter netdev_eth,$(USEMODULE)))
+    USEMODULE += virtwip_ethernet
+  endif
+endif
+
+ifneq (,$(filter virtwip_ppp,$(USEMODULE)))
+  USEMODULE += virtwip_polarssl
+endif
+
+ifneq (,$(filter virtwip_contrib,$(USEMODULE)))
+  USEMODULE += sema
+  USEMODULE += ztimer_msec
+  ifneq (,$(filter bhp,$(USEMODULE)))
+    USEMODULE += bhp_event
+  endif
+endif
+
+ifneq (,$(filter virtwip_netif,$(USEMODULE)))
+  USEMODULE += netif
+endif
+
+ifneq (,$(filter virtwip_dhcp_auto,$(USEMODULE)))
+  USEMODULE += virtwip_dhcp
+endif
+
+ifneq (,$(filter virtwip_dhcp,$(USEMODULE)))
+  USEMODULE += virtwip_udp
+endif
+
+# if an actual netdev is used, we need virtwip_netdev to integrate it
+ifneq (,$(filter virtwip_ethernet virtwip_sixlowpan,$(USEMODULE)))
+  USEMODULE += virtwip_netdev
+endif
+
+# Addition of missing modules for boards that do not have physical network
+# module - a dirty hack when virtwip_dhcp is used for IPv4 (use of virtwip_ipv4 module)
+# on such boards (lack of netdev_eth module)
+#
+# This is dirty-hack" to solve compilation problem
+# TODO:
+# Find the root cause of the problem. PR #17174 and PR #17162 could be a good
+# starting point.
+ifneq (,$(filter virtwip_dhcp,$(USEMODULE)))
+  ifneq (,$(filter virtwip_ipv4,$(USEMODULE)))
+    ifeq (,$(filter netdev_eth,$(USEMODULE)))
+      USEMODULE += netdev_eth
+    endif
+  endif
+endif
+
+ifneq (,$(filter netif,$(USEMODULE)))
+  USEMODULE += fmt
+endif
