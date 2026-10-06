@@ -30,7 +30,7 @@
 #include "net/sock/util.h"
 #include "net/iana/portrange.h"
 
-#if MODULE_GNRC_SOCK_UDP || MODULE_LWIP_SOCK_UDP
+#if MODULE_GNRC_SOCK_UDP || MODULE_LWIP_SOCK_UDP || MODULE_VIRTWIP_SOCK_UDP
 #  include "net/sock/udp.h"
 #endif
 
