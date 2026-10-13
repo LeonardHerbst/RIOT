@@ -1,0 +1,5 @@
+INCLUDES += -I$(RIOTPKG)/femto-container/include
+INCLUDES += -I$(RIOTPKG)/femto-container/include_vm
+INCLUDES += -I$(PKGDIRBASE)/femto-container/include
+DIRS += $(RIOTPKG)/femto-container/contrib
+CFLAGS += -DFEMTO_CONTAINER_EXTERNAL_CALLS=1
