@@ -128,11 +128,6 @@ extern void lwip_bootstrap(void);
 AUTO_INIT(lwip_bootstrap,
           AUTO_INIT_PRIO_MOD_LWIP);
 #endif
-#if IS_USED(MODULE_AUTO_INIT_VIRTWIP)
-extern void lwip_bootstrap(void);
-AUTO_INIT(lwip_bootstrap,
-          AUTO_INIT_PRIO_MOD_LWIP);
-#endif
 #if IS_USED(MODULE_SOCK_DTLS)
 extern void sock_dtls_init(void);
 AUTO_INIT(sock_dtls_init,

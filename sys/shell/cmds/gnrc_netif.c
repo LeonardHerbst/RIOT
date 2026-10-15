@@ -783,12 +783,6 @@ static void _netif_list(netif_t *iface)
         printf(" State: %s ", (enabled == NETOPT_ENABLE) ? "up" : "down" );
     }
 #endif /* MODULE_LWIP_NETIF */
-#if IS_USED(MODULE_VIRTWIP_NETIF) /* only supported on lwIP for now */
-    res = netif_get_opt(iface, NETOPT_ACTIVE, 0, &enabled, sizeof(enabled));
-    if (res >= 0) {
-        printf(" State: %s ", (enabled == NETOPT_ENABLE) ? "up" : "down" );
-    }
-#endif /* MODULE_VIRTWIP_NETIF */
     line_thresh = _newline(0U, line_thresh);
     res = netif_get_opt(iface, NETOPT_ADDRESS_LONG, 0, hwaddr, sizeof(hwaddr));
     if (res >= 0) {
@@ -1687,11 +1681,6 @@ static uint8_t _get_prefix_len(char *addr)
 static int _netif_link(netif_t *iface, netopt_enable_t en)
 {
 #if IS_USED(MODULE_LWIP_NETIF) /* lwIP sets netif state, not link state */
-    if (netif_set_opt(iface, NETOPT_ACTIVE, 0, &en, sizeof(en)) < 0) {
-        printf("error: unable to set state %s\n", en == NETOPT_ENABLE ? "up" : "down");
-        return 1;
-    }
-#elif IS_USED(MODULE_VIRTWIP_NETIF) /* lwIP sets netif state, not link state */
     if (netif_set_opt(iface, NETOPT_ACTIVE, 0, &en, sizeof(en)) < 0) {
         printf("error: unable to set state %s\n", en == NETOPT_ENABLE ? "up" : "down");
         return 1;
