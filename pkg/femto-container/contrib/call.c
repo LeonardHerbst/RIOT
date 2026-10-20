@@ -18,23 +18,29 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
-uint32_t f12r_vm_printf(f12r_t *f12r, uint64_t *regs)
+uint32_t f12r_vm_printf(f12r_flow_t *flow, uint64_t *regs)
 {
-    (void)f12r;
-    return printf((char*)(uintptr_t)regs[1], regs[2], regs[3], regs[4], regs[5]);
+    (void)flow;
+    /* cast to uintptr_t first is necessary for <64 bit architectures
+     * but it breaks the llu and lld formats */
+    return printf((const char *)(uintptr_t)regs[1],
+                  (uintptr_t)regs[2],
+                  (uintptr_t)regs[3],
+                  (uintptr_t)regs[4],
+                  (uintptr_t)regs[5]);
 }
 
-uint32_t f12r_vm_abort(f12r_t *f12r, uint64_t *regs)
+uint32_t f12r_vm_abort(f12r_flow_t *flow, uint64_t *regs)
 {
     (void) regs;
-    f12r->flags |= FC_FLAG_ABORT;
+    flow->state |= FC_FLOW_STATE_ABORT;
     return 0;
 }
 
-uint32_t f12r_vm_abort_with_msg(f12r_t *f12r, uint64_t *regs)
+uint32_t f12r_vm_abort_with_msg(f12r_flow_t *flow, uint64_t *regs)
 {
     printf("%s", (char *)(uintptr_t)regs[1]);
-    f12r->flags |= FC_FLAG_ABORT;
+    flow->state |= FC_FLOW_STATE_ABORT;
     return 0;
 }
 

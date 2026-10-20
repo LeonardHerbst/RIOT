@@ -1,5 +1,6 @@
 RIOTBASE ?= $(CURDIR)/../../RIOT
-EMBPF_GENEMBPF = $(RIOTBASE)/dist/tools/embpf/gen_embpf.py
+# EMBPF_GENEMBPF = $(RIOTBASE)/dist/tools/embpf/gen_embpf.py
+EMBPF_GENEMBPF = /home/leo/projects/benchmark-language-runtimes/external/femto-containers-src/tools/gen_embpf.py
 
 HEAP_SIZE ?= 0
 

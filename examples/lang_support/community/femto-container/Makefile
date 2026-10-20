@@ -17,6 +17,7 @@ $(error Specify a program to run!)
 endif
 
 USEMODULE += ztimer_usec
+USEMODULE += ztimer_msec
 USEPKG += femto-container
 USEPKG += mpaland-printf
 
@@ -37,12 +38,13 @@ CFLAGS += -DFEMTO_CONTAINER_ENABLE_ALU32
 CFLAGS += -DFEMTO_CONTAINER_BRANCHES_ALLOWED=2000000
 CFLAGS += -DFEMTO_CONTAINER_USER_HELPER
 CFLAGS += -DDEBUG_ASSERT_VERBOSE
+CFLAGS += -DFEMTO_CONTAINER_PRETTY_ERROR
 
 all: $(BLOBS)
 
 .PHONY: program.bin clean-ebpf
 program.bin: $(PROGRAM_FILE)
-	$(MAKE) -C $(CURDIR)/programs all EMBPF_SOURCES=$(PROGRAM_FILE) EMBPF_INCLUDES=$(PROGRAM_INCLUDES) SCALE_FACTOR=$(SCALE_FACTOR)
+	$(MAKE) -C $(CURDIR)/programs all EMBPF_SOURCES=$(PROGRAM_FILE) EMBPF_INCLUDES=$(PROGRAM_INCLUDES)
 	cp $(CURDIR)/programs/$(PROGRAM).o $(CURDIR)/program.o
 	cp $(CURDIR)/programs/$(PROGRAM).bin $(CURDIR)/program.bin
 	rm $(CURDIR)/programs/*.bin || true

@@ -1,7 +1,9 @@
 PKG_NAME    = femto-container
-PKG_VERSION = ac3559cf89dc12beae51f6151b2e557304cfdfb0
+PKG_VERSION = 3cd025a6798ba42b9357f2cca08e8b760cbce7f9
 PKG_URL     = git@github.com:LeonardHerbst/Femto-Container.git
 PKG_LICENSE = apache
+
+PKG_SOURCE_LOCAL = /home/leo/projects/benchmark-language-runtimes/external/femto-containers-src
 
 include $(RIOTBASE)/pkg/pkg.mk
 
