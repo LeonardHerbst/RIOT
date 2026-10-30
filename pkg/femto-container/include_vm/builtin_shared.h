@@ -25,9 +25,11 @@ union {                              \
 }
 
 enum {
-    BPF_FUNC_BUILTIN_ABORT          = 0x01,
-    BPF_FUNC_BUILTIN_ABORT_WITH_MSG = 0x02,
-    BPF_FUNC_BUILTIN_PRINTF         = 0x03,
+    BPF_FUNC_BUILTIN_ABORT          = 0x100001,
+    BPF_FUNC_BUILTIN_ABORT_WITH_MSG = 0x100002,
+    BPF_FUNC_BUILTIN_PRINTF         = 0x100003,
+    BPF_FUNC_BUILTIN_SPRINTF        = 0x100004,
+    BPF_FUNC_BUILTIN_ATIO           = 0x100005,
 };
 
 #ifdef __cplusplus

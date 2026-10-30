@@ -9,49 +9,80 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "femtocontainer/femtocontainer.h"
 #include "femto_contrib.h"
 #include "builtin_shared.h"
 
+uint32_t f12r_vm_abort(f12r_flow_t *flow, uint64_t *regs)
+{
+    (void) regs;
+    flow->state |= FC_FLOW_STATE_ABORT;
+    return 0;
+}
+
+uint32_t f12r_vm_abort_with_msg(f12r_flow_t *flow, uint64_t *regs)
+{
+    printf("%s", (char *)(uintptr_t)regs[1]);
+    flow->state |= FC_FLOW_STATE_ABORT;
+    return 0;
+}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
-uint32_t f12r_vm_printf(f12r_t *f12r, uint64_t *regs)
+uint32_t f12r_vm_printf(f12r_flow_t *flow, uint64_t *regs)
 {
-    (void)f12r;
-    return printf((char*)(uintptr_t)regs[1], regs[2], regs[3], regs[4], regs[5]);
+    (void)flow;
+    /* cast to uintptr_t first is necessary for <64 bit architectures
+     * but it breaks the llu and lld formats */
+    return printf((const char *)(uintptr_t)regs[1],
+                  (uintptr_t)regs[2],
+                  (uintptr_t)regs[3],
+                  (uintptr_t)regs[4],
+                  (uintptr_t)regs[5]);
 }
 
-uint32_t f12r_vm_abort(f12r_t *f12r, uint64_t *regs)
+uint32_t f12r_vm_sprintf(f12r_flow_t *flow, uint64_t *regs)
 {
-    (void) regs;
-    f12r->flags |= FC_FLAG_ABORT;
-    return 0;
-}
-
-uint32_t f12r_vm_abort_with_msg(f12r_t *f12r, uint64_t *regs)
-{
-    printf("%s", (char *)(uintptr_t)regs[1]);
-    f12r->flags |= FC_FLAG_ABORT;
-    return 0;
+    (void)flow;
+    /* cast to uintptr_t first is necessary for <64 bit architectures
+     * but it breaks the llu and lld formats */
+    return sprintf((char *)(uintptr_t)regs[1],
+                  (const char *)(uintptr_t)regs[2],
+                  (uintptr_t)regs[3],
+                  (uintptr_t)regs[4],
+                  (uintptr_t)regs[5]);
 }
 
 #pragma GCC diagnostic pop
+
+
+uint32_t f12r_vm_atio(f12r_flow_t *flow, uint64_t *regs)
+{
+    (void)flow;
+    return atoi((const char *)(uintptr_t)regs[1]);
+}
 
 f12r_call_t f12r_get_external_call(uint32_t num)
 {
     f12r_call_t helper = NULL;
     switch(num) {
-        case BPF_FUNC_BUILTIN_PRINTF:
-            helper = &f12r_vm_printf;
-            break;
         case BPF_FUNC_BUILTIN_ABORT:
             helper = &f12r_vm_abort;
             break;
         case BPF_FUNC_BUILTIN_ABORT_WITH_MSG:
             helper = &f12r_vm_abort_with_msg;
+            break;
+        case BPF_FUNC_BUILTIN_PRINTF:
+            helper = &f12r_vm_printf;
+            break;
+        case BPF_FUNC_BUILTIN_SPRINTF:
+            helper = &f12r_vm_sprintf;
+            break;
+        case BPF_FUNC_BUILTIN_ATIO:
+            helper = &f12r_vm_atio;
             break;
         default:
             break;
