@@ -520,6 +520,7 @@ static void _isr(event_t *ev)
 {
     lwip_netif_t *compat_netif = container_of(ev, lwip_netif_t, ev_isr);
     netdev_t *dev = compat_netif->lwip_netif.state;
+    /* Driver bootom half postst on the evnet queue with RX_COMPLETE */
     dev->driver->isr(dev);
 }
 
