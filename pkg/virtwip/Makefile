@@ -4,50 +4,96 @@ PKG_URL=https://github.com/lwip-tcpip/lwip.git
 PKG_VERSION=77dcd25a72509eb83f72b033d219b1d40cd8eb95
 PKG_LICENSE=BSD-3-Clause
 
+PKG_SOURCE_LOCAL = /home/leo/projects/lwip/
+
 include $(RIOTBASE)/pkg/pkg.mk
 
-VIRTWIP_MODULES         = virtwip_api virtwip_app_lwiperf virtwip_core \
-                            virtwip_ipv4 virtwip_ipv6 virtwip_netif \
-                            virtwip_netif_ppp virtwip_polarssl
-VIRTWIP_USEMODULE       = $(filter $(VIRTWIP_MODULES),$(USEMODULE))
-VIRTWIP_MODULE_MAKEFILE = $(RIOTBASE)/Makefile.base
+include $(CURDIR)/Makefile.conf
 
-.PHONY: $(VIRTWIP_MODULES)
+VIRTWIP_INCLUDES ?= -I$(PKG_SOURCE_DIR)/src/include
+VIRTWIP_INCLUDES += -I$(CURDIR)/include_vm
+VIRTWIP_INCLUDES += -I$(CURDIR)/include_shared
+VIRTWIP_INCLUDES += -I$(RIOTBASE)/pkg/femto-container/include_vm
 
-CFLAGS += -Wno-address
-# When compiled e.g. with `CFLAGS += -DIP6_DEBUG=LWIP_DBG_ON`, debug output
-# does not use the correct format specifiers and compilation fails. (All
-# instances were differently named but same sized integer types, e.g. %lx
-# for printing int when sizeof(int) == sizeof(long int).)
-CFLAGS += -Wno-format
+VIRTWIP_CONTRIB_SRC ?= $(wildcard $(RIOTPKG)/virtwip/contrib_vm/*.c)
+VIRTWIP_CONTRIB_SRC += $(wildcard $(RIOTPKG)/virtwip/contrib_vm/icd/*.c)
 
-make_module = +$(QQ)"$(MAKE)" -C $(2) -f $(VIRTWIP_MODULE_MAKEFILE) MODULE=$(1)
+VIRTWIP_CONTRIB_OBJS := $(subst $(RIOTPKG)/virtwip/contrib_vm, $(PKG_BUILD_DIR), $(VIRTWIP_CONTRIB_SRC))
+VIRTWIP_CONTRIB_OBJS := $(VIRTWIP_CONTRIB_OBJS:.c=.ll)
 
-all: virtwip
+ifneq (,$(filter virtwip_api, $(USEMODULE)))
+  VIRTWIP_PKG_SRC += $(wildcard $(PKG_SOURCE_DIR)/src/api/*.c)
+endif
+ifneq (,$(filter virtwip_core, $(USEMODULE)))
+  VIRTWIP_PKG_SRC += $(wildcard $(PKG_SOURCE_DIR)/src/core/*.c)
+endif
+ifneq (,$(filter virtwip_ipv4, $(USEMODULE)))
+  VIRTWIP_PKG_SRC += $(wildcard $(PKG_SOURCE_DIR)/src/core/ipv4/*.c)
+endif
+ifneq (,$(filter virtwip_ipv6, $(USEMODULE)))
+  VIRTWIP_PKG_SRC += $(wildcard $(PKG_SOURCE_DIR)/src/core/ipv6/*.c)
+endif
+ifneq (,$(filter virtwip_netif, $(USEMODULE)))
+  VIRTWIP_PKG_SRC += $(wildcard $(PKG_SOURCE_DIR)/src/netif/*.c)
+endif
 
-virtwip: $(VIRTWIP_USEMODULE)
-	$(call make_module,$@,$(PKG_SOURCE_DIR))
+# slipif requires an sio_* port implementation which does not exist for
+# RIOT (SLIP goes through the netdev glue instead): exclude it and guard
+# the ICD dispatch cases with VIRTWIP_ENABLE_SLIPIF.
+VIRTWIP_PKG_SRC := $(filter-out $(PKG_SOURCE_DIR)/src/netif/slipif.c,$(VIRTWIP_PKG_SRC))
 
-virtwip_api:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/api)
+VIRTWIP_PKG_OBJS := $(subst $(PKG_SOURCE_DIR), $(PKG_BUILD_DIR), $(VIRTWIP_PKG_SRC))
+VIRTWIP_PKG_OBJS := $(VIRTWIP_PKG_OBJS:.c=.ll)
 
-virtwip_app_lwiperf:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/apps/lwiperf)
+EMBPF_GENEMBPF=$(PKGDIRBASE)/femto-container/tools/gen_embpf.py
 
-virtwip_core:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/core)
+CLANG ?= clang
+LLC ?= llc
+LLVM_LINK ?= llvm-link-21
 
-virtwip_ipv4:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/core/ipv4)
+.SECONDEXPANSION:
 
-virtwip_ipv6:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/core/ipv6)
+.PHONY: all
 
-virtwip_netif:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/netif)
+all: $(PKG_BUILD_DIR)/lwip.bin
 
-virtwip_netif_ppp:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/netif/ppp)
+%/:
+	@mkdir -p $@
 
-virtwip_polarssl:
-	$(call make_module,$@,$(PKG_SOURCE_DIR)/src/netif/ppp/polarssl)
+dump: $(PKG_BUILD_DIR)/lwip.bin
+	$(EMBPF_GENEMBPF) -d dump $@
+
+$(PKG_BUILD_DIR)/lwip.bin: $(PKG_BUILD_DIR)/lwip.o
+	$(EMBPF_GENEMBPF) -d generate $< $@
+
+$(PKG_BUILD_DIR)/lwip.o: $(VIRTWIP_PKG_OBJS) $(VIRTWIP_CONTRIB_OBJS)
+	$(LLVM_LINK) $^ -o $(PKG_BUILD_DIR)/combined.ll
+	$(LLC) $(PKG_BUILD_DIR)/combined.ll -march=bpf -mcpu=v3 -mattr=+alu32 \
+		-filetype=obj -stack-size-section -o $@
+
+$(PKG_BUILD_DIR)/%.ll: $(PKG_SOURCE_DIR)/%.c | $$(@D)/
+	$(CLANG) -nostdinc -isystem `$(CLANG) -print-file-name=include` \
+		-Wno-unused-value -Wno-pointer-sign -g3\
+		-Wno-compare-distinct-pointer-types \
+		-Wno-gnu-variable-sized-type-not-at-end \
+		-Wno-address-of-packed-member -Wno-tautological-compare \
+		-Wno-unknown-warning-option -fstack-size-section \
+		-fno-builtin \
+		$(LWIP_FLAGS) \
+		$(VIRTWIP_INCLUDES) \
+		-Os -emit-llvm -c $< -o $@
+
+$(PKG_BUILD_DIR)/%.ll: $(RIOTPKG)/virtwip/contrib_vm/%.c | $$(@D)/
+	$(CLANG) -nostdinc -isystem `$(CLANG) -print-file-name=include` \
+		-Wno-unused-value -Wno-pointer-sign -g3\
+		-Wno-compare-distinct-pointer-types \
+		-Wno-gnu-variable-sized-type-not-at-end \
+		-Wno-address-of-packed-member -Wno-tautological-compare \
+		-Wno-unknown-warning-option -fstack-size-section \
+		-fno-builtin \
+		$(LWIP_FLAGS) \
+		$(VIRTWIP_INCLUDES) \
+		-Os -emit-llvm -c $< -o $@
+
+
+
