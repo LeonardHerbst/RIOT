@@ -17,6 +17,8 @@ PSEUDOMODULES += virtwip_udp
 PSEUDOMODULES += virtwip_udplite
 PSEUDOMODULES += virtwip_sock_async
 
+CFLAGS += -DFEMTO_CONTAINER_USER_HELPER
+
 ifneq (,$(filter arch_64bit,$(FEATURES_USED)))
 # Required for platforms where sizeof(void*) > 4
     CFLAGS += -DIPV6_FRAG_COPYHEADER=1

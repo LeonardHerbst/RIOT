@@ -26,6 +26,15 @@ extern "C" {
 
 void lwip_netif_init_devs(void);
 
+#ifdef MODULE_SLIPDEV_NET
+#if LWIP_IPV4
+err_t slip_output4(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr);
+#endif
+#if LWIP_IPV6
+err_t slip_output6(struct netif *netif, struct pbuf *q, const ip6_addr_t *ip6addr);
+#endif
+#endif
+
 /**
  * @brief Adds an Ethernet netif using the supplied netdev.
  *

@@ -55,7 +55,7 @@ static struct netif *setup_netif(lwip_netif_t *netif, netdev_t *state,
     /* RIOT-LWIP-BORDER: lwIP call | also hands lwip_netdev_init() to lwIP
      * as netif->init callback (lwIP calls back into RIOT from netif_add)
      * and lwIP's input_fn (tcpip_input/tcpip_6lowpan_input) as netif->input */
-    struct netif *_if = netif_add_noaddr(&netif->lwip_netif, state, lwip_netdev_init,
+    struct netif *_if = netif_add_noaddr(&netif->lwip_netif, state, (bpfptr_t)lwip_netdev_init,
                                          input_fn);
     if (_if) {
         netif_register(&netif->common_netif);
@@ -65,7 +65,7 @@ static struct netif *setup_netif(lwip_netif_t *netif, netdev_t *state,
 
 struct netif *lwip_add_ethernet(lwip_netif_t *netif, netdev_t *state)
 {
-    struct netif *_if = setup_netif(netif, state, tcpip_input);
+    struct netif *_if = setup_netif(netif, state, NETIF_INPUT_FN_TCPIP_INPUT);
     if (_if && netif_default == NULL) {
         netif_set_default(_if); /* RIOT-LWIP-BORDER: lwIP call */
     }
@@ -75,7 +75,7 @@ struct netif *lwip_add_ethernet(lwip_netif_t *netif, netdev_t *state)
 #if IS_USED(MODULE_VIRTWIP_SIXLOWPAN)
 struct netif *lwip_add_6lowpan(lwip_netif_t *netif, netdev_t *state)
 {
-    return setup_netif(netif, state, tcpip_6lowpan_input);
+    return setup_netif(netif, state, NETIF_INPUT_FN_TCPIP_6LOWPAN_INPUT);
 }
 #endif /* MODULE_VIRTWIP_SIXLOWPAN */
 

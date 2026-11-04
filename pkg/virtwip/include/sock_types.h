@@ -31,6 +31,7 @@ extern "C" {
  */
 typedef struct lwip_sock_base lwip_sock_base_t;
 
+void netconn_cb(struct netconn *conn, enum netconn_evt evt, u16_t len);
 #ifdef SOCK_HAS_ASYNC
 /**
  * @brief   Event callback for @ref lwip_sock_base_t

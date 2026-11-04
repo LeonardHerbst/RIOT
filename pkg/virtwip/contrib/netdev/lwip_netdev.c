@@ -37,6 +37,9 @@
 #include "tiny_strerror.h"
 #include "utlist.h"
 
+#include "shared.h"
+#include "femtocontainer/femtocontainer.h"
+
 #define ENABLE_DEBUG                0
 #include "debug.h"
 
@@ -145,12 +148,12 @@ err_t lwip_netdev_init(struct netif *netif)
         netif->mtu = ETHERNET_DATA_LEN;
         /* RIOT-LWIP-BORDER: callback handed to lwIP | lwIP calls back into
          * RIOT via netif->linkoutput on TX */
-        netif->linkoutput = _eth_link_output;
+        netif->linkoutput = (bpfptr_t)_eth_link_output;
 #if LWIP_IPV4
-        netif->output = etharp_output;
+        netif->output = NETIF_OUTPUT_FN_ETHARP_OUTPUT;
 #endif
 #if LWIP_IPV6
-        netif->output_ip6 = ethip6_output;
+        netif->output_ip6 = NETIF_OUTPUT_IP6_FN_ETHIP6_OUTPUT;
         /* RIOT-LWIP-BORDER: lwIP call */
         netif_create_ip6_linklocal_address(netif, 1);   /* 1: hwaddr is 48-bit MAC addr */
 #endif
@@ -180,7 +183,7 @@ err_t lwip_netdev_init(struct netif *netif)
         }
         /* RIOT-LWIP-BORDER: callback handed to lwIP | lwIP calls back into
          * RIOT via netif->linkoutput on TX */
-        netif->linkoutput = _ieee802154_link_output;
+        netif->linkoutput = (bpfptr_t)_ieee802154_link_output;
         res = lowpan6_if_init(netif);   /* RIOT-LWIP-BORDER: lwIP call */
         if (res != ERR_OK) {
             return res;
@@ -225,16 +228,16 @@ err_t lwip_netdev_init(struct netif *netif)
         netif->mtu = ETHERNET_DATA_LEN;
         /* RIOT-LWIP-BORDER: callback handed to lwIP | lwIP calls back into
          * RIOT via netif->linkoutput on TX */
-        netif->linkoutput = _slip_link_output;
+        netif->linkoutput = (bpfptr_t)_slip_link_output;
 #if LWIP_IPV4
         /* RIOT-LWIP-BORDER: callback handed to lwIP | lwIP calls back into
          * RIOT via netif->output (IPv4) */
-        netif->output = slip_output4;
+        netif->output = NETIF_OUTPUT_FN_EXTERNAL_SLIP_OUTPUT4;
 #endif
 #if LWIP_IPV6
         /* RIOT-LWIP-BORDER: callback handed to lwIP | lwIP calls back into
          * RIOT via netif->output_ip6 (IPv6) */
-        netif->output_ip6 = slip_output6;
+        netif->output_ip6 = NETIF_OUTPUT_IP6_FN_EXTERNAL_SLIP_OUTPUT6;
 
         if (IS_USED(MODULE_SLIPDEV_L2ADDR)) {
             netif->hwaddr_len = (u8_t)netdev->driver->get(netdev, NETOPT_ADDRESS_LONG,
@@ -493,11 +496,18 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
                 DEBUG("lwip_netdev: error receiving packet\n");
                 return;
             }
-            /* RIOT-LWIP-BORDER: lwIP call via callback | netif->input is
-             * tcpip_input/tcpip_6lowpan_input: hands the pbuf to lwIP's
-             * TCP/IP thread */
-            if (netif->input(p, netif) != ERR_OK) {
+            virtwip_input_args_t args = {
+                .p = (bpfptr_t)(uintptr_t)p,
+                .netif = (bpfptr_t)(uintptr_t)netif,
+            };
+            int64_t res;
+            /* rx_flow: f12r_flow_t for this driver thread (vm handle + BPF stack),
+             * created once at netif init — part of the remaining glue */
+            f12r_execute(&rx_flow, &args, sizeof(args), &res, "virtwip_netif_input");
+
+            if ((err_t)(uint8_t)res != ERR_OK) {   /* e.g. tcpip mbox full */
                 DEBUG("lwip_netdev: error inputing packet\n");
+                pbuf_free(p);                      /* caller owns p on failure */
                 return;
             }
         }

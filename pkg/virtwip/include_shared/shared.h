@@ -25,11 +25,17 @@ enum {
     BPF_FUNC_MBOX_SET_INVALID,
     BPF_FUNC_THREAD_NEW,
     BPF_FUNC_THREAD_GETPID,
+    /* This used to be a dynamic VM->host function call but the fp was always
+     * set to the _netconn_cb function. Thus this becomes a regular helper. */
     BPF_FUNC_CALL_NETCONN_CB,
-    BPF_FUNC_CALL_NETIF_INIT_FN,
-    BPF_FUNC_CALL_NETIF_LINKOUTPUT_FN,
+    /* The netif_output_fn is a VM->VM function with one VM->host option (this). */
     BPF_FUNC_CALL_SLIP_OUTPUT4,
+    /* The netif_output_ip6_fn is a VM->VM function with one VM->host option (this). */
     BPF_FUNC_CALL_SLIP_OUTPUT6,
+    /* These functions call a function pointer passed to
+     * them (as a bpfptr_t aka uint64_t). This is used for indirect VM->host calls. */
+    BPF_FUNC_CALL_FP_NETIF_INIT_FN,
+    BPF_FUNC_CALL_FP_NETIF_LINKOUTPUT_FN,
 };
 
 typedef struct {
@@ -42,6 +48,11 @@ typedef struct {
     __bpf_shared_ptr(void *, arg);
     __bpf_shared_ptr(const char *, name);
 } virtwip_thread_info_t;
+
+typedef struct {
+    bpfptr_t p;     /* struct pbuf * */
+    bpfptr_t netif; /* struct netif * */
+} virtwip_input_args_t;
 
 #define _MSG_SUCCESS    (0x5cac)
 #define _MSG_TIMEOUT    (0x5cad)

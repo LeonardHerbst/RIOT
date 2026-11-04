@@ -284,8 +284,7 @@ static int _sock_ep_to_netconn_pars(const struct _sock_tl_ep *local,
 
 /* RIOT-LWIP-BORDER: lwIP => RIOT | lwIP calls this via netconn callback
  * (registered with lwIP in _create()) whenever netconn state changes */
-static void _netconn_cb(struct netconn *conn, enum netconn_evt evt,
-                        u16_t len)
+void netconn_cb(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
 #if IS_ACTIVE(SOCK_HAS_ASYNC)
     lwip_sock_base_t *sock = netconn_get_callback_arg(conn);
@@ -354,11 +353,11 @@ static void _netconn_cb(struct netconn *conn, enum netconn_evt evt,
 
 static int _create(int type, int proto, uint16_t flags, struct netconn **out)
 {
-    /* RIOT-LWIP-BORDER: lwIP call | also registers _netconn_cb as netconn
+    /* RIOT-LWIP-BORDER: lwIP call | also registers netconn_cb as netconn
      * callback (lwIP calls back into RIOT from its TCP/IP thread) */
     if ((*out = netconn_new_with_proto_and_callback(
             type, proto,
-            IS_ACTIVE(SOCK_HAS_ASYNC) ? _netconn_cb : NULL)) == NULL) {
+            IS_ACTIVE(SOCK_HAS_ASYNC) ? BPF_FUNC_CALL_NETCONN_CB : NULL)) == NULL) {
         return -ENOMEM;
     }
 
