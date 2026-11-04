@@ -69,37 +69,6 @@ extern "C" {
 #define PACK_STRUCT_END
 /** @} */
 
-/**
- * @name    Platform specific diagnostic output
- * @{
- */
-#ifdef MODULE_LOG
-#  define LWIP_PLATFORM_DIAG(x)   LOG_INFO x
-#  ifdef NDEBUG
-#    define LWIP_PLATFORM_ASSERT(x)
-#  else
-#    define LWIP_PLATFORM_ASSERT(x)     \
-        do { \
-            LOG_ERROR("Assertion \"%s\" failed at %s:%d\n", x, __FILE__, __LINE__); \
-            fflush(NULL); \
-            abort(); \
-        } while (0)
-#  endif
-#else
-#  define LWIP_PLATFORM_DIAG(x)   printf x
-#  ifdef NDEBUG
-#    define LWIP_PLATFORM_ASSERT(x)
-#  else
-#    define LWIP_PLATFORM_ASSERT(x)     \
-        do { \
-            printf("Assertion \"%s\" failed at %s:%d\n", x, __FILE__, __LINE__); \
-            fflush(NULL); \
-            abort(); \
-        } while (0)
-#  endif
-#endif
-/** @} */
-
 #ifdef __cplusplus
 }
 #endif
