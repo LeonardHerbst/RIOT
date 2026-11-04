@@ -24,6 +24,8 @@ union {                              \
     uint64_t :64;                    \
 }
 
+typedef uint64_t bpfptr_t;
+
 enum {
     BPF_FUNC_BUILTIN_ABORT          = 0x100001,
     BPF_FUNC_BUILTIN_ABORT_WITH_MSG = 0x100002,
