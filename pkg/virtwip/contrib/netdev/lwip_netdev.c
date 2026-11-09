@@ -39,6 +39,8 @@
 
 #include "shared.h"
 #include "femtocontainer/femtocontainer.h"
+#include "flow_pool.h"
+#include "virtwip_glue.h"
 
 #define ENABLE_DEBUG                0
 #include "debug.h"
@@ -155,7 +157,10 @@ err_t lwip_netdev_init(struct netif *netif)
 #if LWIP_IPV6
         netif->output_ip6 = NETIF_OUTPUT_IP6_FN_ETHIP6_OUTPUT;
         /* RIOT-LWIP-BORDER: lwIP call */
-        netif_create_ip6_linklocal_address(netif, 1);   /* 1: hwaddr is 48-bit MAC addr */
+        virtwip_netif_ip6_linklocal_args_t llargs = { .netif = (bpfptr_t)(uintptr_t)netif,
+                                                      .from_mac = 1 };   /* 1: hwaddr is 48-bit MAC addr */
+        int64_t res64;
+        virtwip_flow_call("virtwip_netif_create_ip6_linklocal_address", &llargs, sizeof(llargs), &res64);
 #endif
         netif->flags |= NETIF_FLAG_BROADCAST;
         netif->flags |= NETIF_FLAG_ETHARP;
@@ -174,7 +179,9 @@ err_t lwip_netdev_init(struct netif *netif)
             res = ERR_IF;
             goto free;
         }
-        lowpan6_set_pan_id(val);    /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_lowpan6_pan_id_args_t pan = { .pan_id = val };
+        int64_t res;
+        virtwip_flow_call("virtwip_lowpan6_set_pan_id", &pan, sizeof(pan), &res);   /* RIOT-LWIP-BORDER: lwIP call */
         netif->hwaddr_len = (u8_t)netdev->driver->get(netdev, NETOPT_ADDRESS_LONG,
                                                       netif->hwaddr, sizeof(netif->hwaddr));
         if (netif->hwaddr_len > sizeof(netif->hwaddr)) {
@@ -184,7 +191,12 @@ err_t lwip_netdev_init(struct netif *netif)
         /* RIOT-LWIP-BORDER: callback handed to lwIP | lwIP calls back into
          * RIOT via netif->linkoutput on TX */
         netif->linkoutput = (bpfptr_t)_ieee802154_link_output;
-        res = lowpan6_if_init(netif);   /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_netif_args_t if_args = { .netif = (bpfptr_t)(uintptr_t)netif };
+        res = ERR_IF;
+        int64_t res64;
+        if (virtwip_flow_call("virtwip_lowpan6_if_init", &if_args, sizeof(if_args), &res64) == 0) {
+            res = (err_t)res64;   /* RIOT-LWIP-BORDER: lwIP call */
+        }
         if (res != ERR_OK) {
             return res;
         }
@@ -207,7 +219,13 @@ err_t lwip_netdev_init(struct netif *netif)
         /* RIOT-LWIP-BORDER: lwIP call (sets link-local prefix on lwIP's
          * ip6 addr) */
         ipv6_addr_set_link_local_prefix((ipv6_addr_t *)&addr->addr[0]);
-        ip6_addr_assign_zone(addr, IP6_UNICAST, netif); /* RIOT-LWIP-BORDER: lwIP call */
+#if LWIP_IPV6_SCOPES
+            virtwip_ip6_addr_zone_args_t zone = { .ip6 = (bpfptr_t)(uintptr_t)addr,
+                                                  .netif = (bpfptr_t)(uintptr_t)netif,
+                                                  .type = IP6_UNICAST };
+            int64_t res;
+            virtwip_flow_call("virtwip_ip6_addr_assign_zone", &zone, sizeof(zone), &res);
+#endif
         /* Set address state. */
 #if LWIP_IPV6_DUP_DETECT_ATTEMPTS
         /* Will perform duplicate address detection (DAD). */
@@ -261,7 +279,13 @@ err_t lwip_netdev_init(struct netif *netif)
             /* RIOT-LWIP-BORDER: lwIP call (sets link-local prefix on lwIP's
              * ip6 addr) */
             ipv6_addr_set_link_local_prefix((ipv6_addr_t *)&addr->addr[0]);
-            ip6_addr_assign_zone(addr, IP6_UNICAST, netif); /* RIOT-LWIP-BORDER: lwIP call */
+#if LWIP_IPV6_SCOPES
+        virtwip_ip6_addr_zone_args_t zone = { .ip6 = (bpfptr_t)(uintptr_t)addr,
+                                              .netif = (bpfptr_t)(uintptr_t)netif,
+                                              .type = IP6_UNICAST };
+        int64_t res;
+        virtwip_flow_call("virtwip_ip6_addr_assign_zone", &zone, sizeof(zone), &res);
+#endif
             /* Consider address valid. */
             netif->ip6_addr_state[0] = IP6_ADDR_PREFERRED;
         }
@@ -366,7 +390,9 @@ static err_t _eth_link_output(struct netif *netif, struct pbuf *p)
     unsigned int count = 0;
 
 #if ETH_PAD_SIZE
-    pbuf_header(p, -ETH_PAD_SIZE); /* RIOT-LWIP-BORDER: lwIP call */
+    virtwip_pbuf_header_args_t hdr = { .p = (bpfptr_t)(uintptr_t)p, .size = -ETH_PAD_SIZE };
+    int64_t res;
+    virtwip_flow_call("virtwip_pbuf_header", &hdr, sizeof(hdr), &res);  /* RIOT-LWIP-BORDER: lwIP call */
 #endif
     LL_COUNT(p, q, count);
     iolist_t iolist[count];
@@ -384,7 +410,9 @@ static err_t _eth_link_output(struct netif *netif, struct pbuf *p)
         iol->iol_len = (size_t)q->len;
     }
 #if ETH_PAD_SIZE
-    pbuf_header(p, ETH_PAD_SIZE); /* RIOT-LWIP-BORDER: lwIP call */
+    virtwip_pbuf_header_args_t hdr_post = { .p = (bpfptr_t)(uintptr_t)p, .size = ETH_PAD_SIZE };
+    int64_t res_post;
+    virtwip_flow_call("virtwip_pbuf_header", &hdr_post, sizeof(hdr_post), &res_post);  /* RIOT-LWIP-BORDER: lwIP call */
 #endif
     return _common_link_output(netif, netdev, iolist);
 }
@@ -454,13 +482,22 @@ static struct pbuf *_get_recv_pkt(netdev_t *dev)
         return NULL;
     }
     assert(((unsigned)len) <= UINT16_MAX);
-    struct pbuf *p = pbuf_alloc(PBUF_RAW, (u16_t)len, PBUF_POOL);   /* RIOT-LWIP-BORDER: lwIP call */
+    virtwip_pbuf_alloc_args_t alloc = { .layer = PBUF_RAW, .len = (u16_t)len, .type = PBUF_POOL };
+    int64_t res;
+    if (virtwip_flow_call("virtwip_pbuf_alloc", &alloc, sizeof(alloc), &res) != 0) {
+        return NULL;    /* RIOT-LWIP-BORDER: lwIP call */
+    }
+    struct pbuf *p = (struct pbuf *)(uintptr_t)res;
 
     if (p == NULL) {
         DEBUG("lwip_netdev: can not allocate in pbuf\n");
         return NULL;
     }
-    pbuf_take(p, _tmp_buf, len);    /* RIOT-LWIP-BORDER: lwIP call */
+    virtwip_pbuf_take_args_t take = { .p = (bpfptr_t)(uintptr_t)p,
+                                      .buf = (bpfptr_t)(uintptr_t)_tmp_buf,
+                                      .len = (u16_t)len };
+    virtwip_flow_call_buf("virtwip_pbuf_take", &take, sizeof(take),
+                           _tmp_buf, len, &res);   /* RIOT-LWIP-BORDER: lwIP call */
     return p;
 }
 
@@ -500,14 +537,19 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
                 .p = (bpfptr_t)(uintptr_t)p,
                 .netif = (bpfptr_t)(uintptr_t)netif,
             };
+            f12r_flow_t *rx_flow;
             int64_t res;
-            /* rx_flow: f12r_flow_t for this driver thread (vm handle + BPF stack),
-             * created once at netif init — part of the remaining glue */
-            f12r_execute(&rx_flow, &args, sizeof(args), &res, "virtwip_netif_input");
+            if (virtwip_flow_acquire(&rx_flow) != 0) {
+                DEBUG("lwip_netdev: no free flow slot\n");
+                virtwip_vm_pbuf_free(p);
+                return;
+            }
+            f12r_execute(rx_flow, &args, sizeof(args), &res, "virtwip_netif_input");
+            virtwip_flow_release(rx_flow);
 
             if ((err_t)(uint8_t)res != ERR_OK) {   /* e.g. tcpip mbox full */
                 DEBUG("lwip_netdev: error inputing packet\n");
-                pbuf_free(p);                      /* caller owns p on failure */
+                virtwip_vm_pbuf_free(p);                  /* caller owns p on failure */
                 return;
             }
         }
@@ -515,11 +557,19 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
     case NETDEV_EVENT_LINK_UP:
         DEBUG_PUTS("[lwip_netdev] NETDEV_EVENT_LINK_UP");
         /* Will wake up DHCP state machine */
-        netifapi_netif_set_link_up(netif);  /* RIOT-LWIP-BORDER: lwIP call */
+        {
+            virtwip_netif_args_t args = { .netif = (bpfptr_t)(uintptr_t)netif };
+            int64_t res;
+            virtwip_flow_call("virtwip_netifapi_netif_set_link_up", &args, sizeof(args), &res);
+        }
         break;
     case NETDEV_EVENT_LINK_DOWN:
         DEBUG_PUTS("[lwip_netdev] NETDEV_EVENT_LINK_DOWN");
-        netifapi_netif_set_link_down(netif);    /* RIOT-LWIP-BORDER: lwIP call */
+        {
+            virtwip_netif_args_t args = { .netif = (bpfptr_t)(uintptr_t)netif };
+            int64_t res;
+            virtwip_flow_call("virtwip_netifapi_netif_set_link_down", &args, sizeof(args), &res);
+        }
         break;
     default:
         break;
