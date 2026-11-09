@@ -85,11 +85,12 @@ dump: $(PKG_BUILD_DIR)/lwip.bin
 $(PKG_BUILD_DIR)/lwip.bin: $(PKG_BUILD_DIR)/lwip.o
 	$(EMBPF_GENEMBPF) -d generate $< $@
 
-# -mcpu=v2: femto does not implement the JMP32 instructions of v3;
-# +alu32 keeps the 32-bit ALU operations (supported by femto)
+# -mcpu=v3 (ALU32 + JMP32). Do not use -mcpu=v2 -mattr=+alu32: LLVM 21 then
+# zero-extends 32-bit values (w2 = w0) and compares them against
+# sign-extended 64-bit immediates (if r2 == -1), which is never true.
 $(PKG_BUILD_DIR)/lwip.o: $(VIRTWIP_PKG_OBJS) $(VIRTWIP_CONTRIB_OBJS)
 	$(LLVM_LINK) $^ -o $(PKG_BUILD_DIR)/combined.ll
-	$(LLC) $(PKG_BUILD_DIR)/combined.ll -march=bpf -mcpu=v2 -mattr=+alu32 \
+	$(LLC) $(PKG_BUILD_DIR)/combined.ll -march=bpf -mcpu=v3 -mattr=+alu32 \
 		-filetype=obj -stack-size-section -o $@
 
 $(PKG_BUILD_DIR)/%.ll: $(PKG_SOURCE_DIR)/%.c $(VIRTWIP_CONFIG_H) | $$(@D)/
