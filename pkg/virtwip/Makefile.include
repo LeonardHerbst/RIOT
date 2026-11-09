@@ -55,6 +55,7 @@ PSEUDOMODULES += virtwip_tcp
 PSEUDOMODULES += virtwip_udp
 PSEUDOMODULES += virtwip_udplite
 PSEUDOMODULES += virtwip_sock_async
+PSEUDOMODULES += virtwip_layout_check
 
 CFLAGS += -DFEMTO_CONTAINER_USER_HELPER
 

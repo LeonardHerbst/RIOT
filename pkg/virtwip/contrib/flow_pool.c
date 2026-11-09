@@ -43,6 +43,13 @@ void virtwip_flow_pool_init(f12r_t *vm)
     }
 }
 
+void virtwip_flow_pool_disable(void)
+{
+    mutex_lock(&_pool_lock);
+    _vm = NULL;
+    mutex_unlock(&_pool_lock);
+}
+
 int virtwip_flow_acquire(f12r_flow_t **flow)
 {
     if (_vm == NULL) {

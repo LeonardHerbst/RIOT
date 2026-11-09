@@ -51,6 +51,13 @@ extern "C" {
 void virtwip_flow_pool_init(f12r_t *vm);
 
 /**
+ * @brief   Unbind the pool from its VM
+ *
+ * All following flow acquisitions fail with -ENODEV.
+ */
+void virtwip_flow_pool_disable(void);
+
+/**
  * @brief   Acquire a flow slot from the pool
  *
  * @param[out] flow    initialized for the VM given to

@@ -43,6 +43,15 @@ void lwip_bootstrap(void);
  */
 void virtwip_vm_start(void);
 
+/**
+ * @brief   Compares the layouts of all structures shared between host and
+ *          VM (only with module virtwip_layout_check)
+ *
+ * @return 0 if all layouts match
+ * @return -1 on a mismatch (details are printed) or if the VM call failed
+ */
+int virtwip_layout_check(void);
+
 #ifdef __cplusplus
 }
 #endif

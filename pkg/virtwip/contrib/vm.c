@@ -20,6 +20,8 @@
 #include "femtocontainer/femtocontainer.h"
 
 #include "flow_pool.h"
+#include "lwip.h"
+#include "virtwip_config.h"
 #include "blob/lwip.bin.h"  /* VM image blob */
 
 static f12r_t _vm;
@@ -44,6 +46,14 @@ void virtwip_vm_start(void)
     }
 
     virtwip_flow_pool_init(&_vm);
+
+#if VIRTWIP_LAYOUT_CHECK
+    if (virtwip_layout_check() != 0) {
+        printf("virtwip: host/VM layouts differ, VM disabled\n");
+        virtwip_flow_pool_disable();
+        assert(false);
+    }
+#endif
 }
 
 /** @} */
