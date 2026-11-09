@@ -328,7 +328,7 @@ static uint32_t femtoh_call_fp_netif_linkoutput_fn(f12r_flow_t *flow, uint64_t *
     return (uint32_t)fn(netif, p);
 }
 
-#if MODULE_SLIPDEV_NET && LWIP_IPV4
+#if VIRTWIP_SLIPDEV && LWIP_IPV4
 static uint32_t femtoh_call_slip_output4(f12r_flow_t *flow, uint64_t *regs)
 {
     (void)flow;
@@ -338,9 +338,9 @@ static uint32_t femtoh_call_slip_output4(f12r_flow_t *flow, uint64_t *regs)
 
     return (uint32_t)slip_output4(netif, p, addr);
 }
-#endif /* MODULE_SLIPDEV_NET && LWIP_IPV4 */
+#endif /* VIRTWIP_SLIPDEV && LWIP_IPV4 */
 
-#if MODULE_SLIPDEV_NET && LWIP_IPV6
+#if VIRTWIP_SLIPDEV && LWIP_IPV6
 static uint32_t femtoh_call_slip_output6(f12r_flow_t *flow, uint64_t *regs)
 {
     (void)flow;
@@ -350,7 +350,7 @@ static uint32_t femtoh_call_slip_output6(f12r_flow_t *flow, uint64_t *regs)
 
     return (uint32_t)slip_output6(netif, p, addr);
 }
-#endif /* MODULE_SLIPDEV_NET && LWIP_IPV6 */
+#endif /* VIRTWIP_SLIPDEV && LWIP_IPV6 */
 
 f12r_call_t femto_container_user_helper(uint32_t num)
 {
@@ -393,14 +393,14 @@ f12r_call_t femto_container_user_helper(uint32_t num)
         return &femtoh_thread_getpid;
     case BPF_FUNC_CALL_NETCONN_CB:
         return &femtoh_call_netconn_cb;
-#if MODULE_SLIPDEV_NET && LWIP_IPV4
+#if VIRTWIP_SLIPDEV && LWIP_IPV4
     case BPF_FUNC_CALL_SLIP_OUTPUT4:
         return &femtoh_call_slip_output4;
-#endif /* MODULE_SLIPDEV_NET && LWIP_IPV4 */
-#if MODULE_SLIPDEV_NET && LWIP_IPV6
+#endif /* VIRTWIP_SLIPDEV && LWIP_IPV4 */
+#if VIRTWIP_SLIPDEV && LWIP_IPV6
     case BPF_FUNC_CALL_SLIP_OUTPUT6:
         return &femtoh_call_slip_output6;
-#endif /* MODULE_SLIPDEV_NET && LWIP_IPV6 */
+#endif /* VIRTWIP_SLIPDEV && LWIP_IPV6 */
     case BPF_FUNC_CALL_FP_NETIF_INIT_FN:
         return &femtoh_call_fp_netif_init_fn;
     case BPF_FUNC_CALL_FP_NETIF_LINKOUTPUT_FN:

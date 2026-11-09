@@ -1,9 +1,9 @@
 #include "lwip/netif.h"
 #include "lwip/etharp.h"
 
-#if MODULE_SLIPDEV_NET && LWIP_IPV4
+#if VIRTWIP_SLIPDEV && LWIP_IPV4
 static err_t (*bpf_call_slip_output4)(netif_t *, pbuf_t *, const ip4_addr_t *) = (void *) BPF_FUNC_CALL_SLIP_OUTPUT4;
-#endif /* MODULE_SLIPDEV_NET && LWIP_IPV4 */
+#endif /* VIRTWIP_SLIPDEV && LWIP_IPV4 */
 #if LWIP_IPV4
 err_t netif_null_output_ip4(netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
 #endif /* LWIP_IPV4 */
@@ -26,10 +26,10 @@ err_t netif_output_fn_dispatch(netif_output_fn fn, netif_t *netif, pbuf_t *p, co
         case NETIF_OUTPUT_FN_NULL_OUTPUT_IP4:
             return netif_null_output_ip4(netif, p, ipaddr);
 #endif /* LWIP_IPV4 */
-#if LWIP_IPV4 && MODULE_SLIPDEV_NET
+#if LWIP_IPV4 && VIRTWIP_SLIPDEV
         case NETIF_OUTPUT_FN_EXTERNAL_SLIP_OUTPUT4:
             return bpf_call_slip_output4(netif, p, ipaddr);
-#endif /* if LWIP_IPV4 && MODULE_SLIPDEV_NET */
+#endif /* if LWIP_IPV4 && VIRTWIP_SLIPDEV */
         /* NETIF_OUTPUT_FN_LOOP_OUTPUT_IPV4 is reserved (loopback support is
          * disabled in this build); falls through to the abort below. */
         default:

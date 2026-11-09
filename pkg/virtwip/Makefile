@@ -8,9 +8,17 @@ PKG_SOURCE_LOCAL = /home/leo/projects/lwip/
 
 include $(RIOTBASE)/pkg/pkg.mk
 
-include $(CURDIR)/Makefile.conf
+# The lwIP configuration is not passed as -D flags: Makefile.include (parsed
+# by the application build) generates virtwip_config.h from Makefile.conf,
+# which include_shared/lwipopts.h includes on both sides.
+VIRTWIP_CONFIG_DIR ?= $(BINDIR)/virtwip_config
+VIRTWIP_CONFIG_H ?= $(VIRTWIP_CONFIG_DIR)/virtwip_config.h
+
+# VIRTWIP_VM marks code compiled into the VM image (see lwipopts.h)
+VIRTWIP_VM_FLAGS = -DVIRTWIP_VM=1
 
 VIRTWIP_INCLUDES ?= -I$(PKG_SOURCE_DIR)/src/include
+VIRTWIP_INCLUDES += -I$(VIRTWIP_CONFIG_DIR)
 VIRTWIP_INCLUDES += -I$(CURDIR)/include_vm
 VIRTWIP_INCLUDES += -I$(CURDIR)/include_shared
 VIRTWIP_INCLUDES += -I$(RIOTBASE)/pkg/femto-container/include_vm
@@ -71,7 +79,7 @@ $(PKG_BUILD_DIR)/lwip.o: $(VIRTWIP_PKG_OBJS) $(VIRTWIP_CONTRIB_OBJS)
 	$(LLC) $(PKG_BUILD_DIR)/combined.ll -march=bpf -mcpu=v3 -mattr=+alu32 \
 		-filetype=obj -stack-size-section -o $@
 
-$(PKG_BUILD_DIR)/%.ll: $(PKG_SOURCE_DIR)/%.c | $$(@D)/
+$(PKG_BUILD_DIR)/%.ll: $(PKG_SOURCE_DIR)/%.c $(VIRTWIP_CONFIG_H) | $$(@D)/
 	$(CLANG) -nostdinc -isystem `$(CLANG) -print-file-name=include` \
 		-Wno-unused-value -Wno-pointer-sign -g3\
 		-Wno-compare-distinct-pointer-types \
@@ -79,11 +87,11 @@ $(PKG_BUILD_DIR)/%.ll: $(PKG_SOURCE_DIR)/%.c | $$(@D)/
 		-Wno-address-of-packed-member -Wno-tautological-compare \
 		-Wno-unknown-warning-option -fstack-size-section \
 		-fno-builtin \
-		$(LWIP_FLAGS) \
+		$(VIRTWIP_VM_FLAGS) \
 		$(VIRTWIP_INCLUDES) \
 		-Os -emit-llvm -c $< -o $@
 
-$(PKG_BUILD_DIR)/%.ll: $(RIOTPKG)/virtwip/contrib_vm/%.c | $$(@D)/
+$(PKG_BUILD_DIR)/%.ll: $(RIOTPKG)/virtwip/contrib_vm/%.c $(VIRTWIP_CONFIG_H) | $$(@D)/
 	$(CLANG) -nostdinc -isystem `$(CLANG) -print-file-name=include` \
 		-Wno-unused-value -Wno-pointer-sign -g3\
 		-Wno-compare-distinct-pointer-types \
@@ -91,7 +99,7 @@ $(PKG_BUILD_DIR)/%.ll: $(RIOTPKG)/virtwip/contrib_vm/%.c | $$(@D)/
 		-Wno-address-of-packed-member -Wno-tautological-compare \
 		-Wno-unknown-warning-option -fstack-size-section \
 		-fno-builtin \
-		$(LWIP_FLAGS) \
+		$(VIRTWIP_VM_FLAGS) \
 		$(VIRTWIP_INCLUDES) \
 		-Os -emit-llvm -c $< -o $@
 

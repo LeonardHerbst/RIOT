@@ -23,4 +23,12 @@
 
 #include "shared_defs.h"
 
+/* lwIP's sys.h requires a SYS_ARCH_PROTECT implementation. lwIP itself runs
+ * in the VM (include_vm/arch/sys_arch.h); the host glue never enters a
+ * protected section, these definitions only mirror the VM's to keep lwIP's
+ * headers consistent. */
+#define SYS_ARCH_PROTECT(x)         sys_mutex_lock(&(x))
+#define SYS_ARCH_UNPROTECT(x)       sys_mutex_unlock(&(x))
+#define SYS_ARCH_DECL_PROTECT(x)    sys_mutex_t x; sys_mutex_new(&(x))
+
 /** @} */
