@@ -35,6 +35,14 @@ extern event_queue_t lwip_event_queue;
  */
 void lwip_bootstrap(void);
 
+/**
+ * @brief   Loads and starts the lwIP VM
+ *
+ * Sets up the VM image, validates it and initializes the flow pool. Called
+ * by @ref lwip_bootstrap.
+ */
+void virtwip_vm_start(void);
+
 #ifdef __cplusplus
 }
 #endif

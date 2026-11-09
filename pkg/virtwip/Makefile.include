@@ -1,6 +1,11 @@
 INCLUDES += -I$(RIOTBASE)/pkg/virtwip/include \
             -I$(PKGDIRBASE)/virtwip/src/include
 
+# Embed the VM image as RIOT blob ("blob/lwip.bin.h", symbols lwip_bin /
+# lwip_bin_len); vpath keeps bin/<board> out of the C include path.
+BLOBS += lwip.bin
+vpath lwip.bin $(BINDIR)/pkg-build/virtwip
+
 PSEUDOMODULES += virtwip_arp
 PSEUDOMODULES += virtwip_autoip
 PSEUDOMODULES += virtwip_dhcp
