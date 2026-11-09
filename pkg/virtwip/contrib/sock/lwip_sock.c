@@ -104,6 +104,20 @@ static bool _ep_isany(const struct _sock_tl_ep *ep)
     return true;
 }
 
+/* Maps an AF_* family to the lwIP IPADDR_TYPE_* the VM entry points expect
+ * (UINT32_MAX for unsupported families, which the VM side rejects) */
+static uint32_t _family_to_vm_ip_type(int family)
+{
+    switch (family) {
+    case AF_INET:
+        return IPADDR_TYPE_V4;
+    case AF_INET6:
+        return IPADDR_TYPE_V6;
+    default:
+        return UINT32_MAX;
+    }
+}
+
 static const ip_addr_t *_netif_to_bind_addr(int family, uint16_t netif_num)
 {
     if (netif_num > UINT8_MAX) {
@@ -112,7 +126,7 @@ static const ip_addr_t *_netif_to_bind_addr(int family, uint16_t netif_num)
 
     /* RIOT-LWIP-BORDER: lwIP call | netif_list is VM-internal; returns a
      * pointer into the netif's address (VM memory) */
-    virtwip_sock_netif_num_args_t args = { .family = (uint32_t)family,
+    virtwip_sock_netif_num_args_t args = { .ip_type = _family_to_vm_ip_type(family),
                                            .netif_num = netif_num };
     int64_t res;
     if (virtwip_flow_call("virtwip_sock_netif_to_bind_addr", &args, sizeof(args), &res) != 0 ||
@@ -127,7 +141,7 @@ static bool _addr_on_netif(int family, int netif_num, const ip_addr_t *addr)
     assert(addr != NULL);
     assert((netif_num >= 0) && (netif_num <= UINT8_MAX));
 
-    virtwip_sock_addr_on_netif_args_t args = { .family = (uint32_t)family,
+    virtwip_sock_addr_on_netif_args_t args = { .ip_type = _family_to_vm_ip_type(family),
                                                .netif_num = (uint32_t)netif_num,
                                                .addr = *addr };
     int64_t res;

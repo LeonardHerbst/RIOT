@@ -193,13 +193,15 @@ typedef struct {
     ip_addr_t addr;
 } virtwip_sock_bind_addr_args_t;
 
+/* ip_type is an lwIP IPADDR_TYPE_V4/IPADDR_TYPE_V6 (the host maps its
+ * AF_* family, RIOT's net/af.h is not available inside the VM) */
 typedef struct {
-    uint32_t family;
+    uint32_t ip_type;
     uint32_t netif_num;
 } virtwip_sock_netif_num_args_t;
 
 typedef struct {
-    uint32_t family;
+    uint32_t ip_type;
     uint32_t netif_num;
     ip_addr_t addr;
 } virtwip_sock_addr_on_netif_args_t;

@@ -15,7 +15,6 @@
 #include <stdint.h>
 
 #include "shared.h"
-#include "net/af.h"
 #include "lwip/netif.h"
 #include "lwip/api.h"
 #include "lwip/netbuf.h"
@@ -63,13 +62,13 @@ bpfptr_t virtwip_sock_netif_to_bind_addr(virtwip_sock_netif_num_args_t *a)
     netif_t *netif;
     NETIF_FOREACH(netif) {
         if (netif->num == (u8_t)(a->netif_num - 1)) {
-            switch (a->family) {
+            switch (a->ip_type) {
 #if LWIP_IPV4
-            case AF_INET:
+            case IPADDR_TYPE_V4:
                 return (bpfptr_t)(uintptr_t)&netif->ip_addr;
 #endif
 #if LWIP_IPV6
-            case AF_INET6:
+            case IPADDR_TYPE_V6:
                 /* link-local address is always the 0th */
                 return (bpfptr_t)(uintptr_t)&netif->ip6_addr[0];
 #endif
@@ -86,13 +85,13 @@ uint32_t virtwip_sock_addr_on_netif(virtwip_sock_addr_on_netif_args_t *a)
     netif_t *netif;
     NETIF_FOREACH(netif) {
         if (netif->num == (u8_t)(a->netif_num - 1)) {
-            switch (a->family) {
+            switch (a->ip_type) {
 #if LWIP_IPV4
-            case AF_INET:
+            case IPADDR_TYPE_V4:
                 return ip_2_ip4(&netif->ip_addr)->addr == ip_2_ip4(&a->addr)->addr;
 #endif
 #if LWIP_IPV6
-            case AF_INET6: {
+            case IPADDR_TYPE_V6: {
                 LOCK_TCPIP_CORE();
                 /* link-local address is always the 0th */
                 s8_t match = netif_get_ip6_addr_match(netif, ip_2_ip6(&a->addr));
@@ -152,7 +151,7 @@ void virtwip_netifapi_netif_set_link_down(virtwip_netif_args_t *a)
 
 pbuf_t *virtwip_pbuf_alloc(virtwip_pbuf_alloc_args_t *a)
 {
-    return pbuf_alloc((pbuf_layer_t)a->layer, (u16_t)a->len, (pbuf_type_t)a->type);
+    return pbuf_alloc((pbuf_layer)a->layer, (u16_t)a->len, (pbuf_type)a->type);
 }
 
 u8_t virtwip_pbuf_free(virtwip_pbuf_p_args_t *a)
@@ -182,6 +181,7 @@ u16_t virtwip_pbuf_copy_partial(virtwip_pbuf_copy_partial_args_t *a)
                              (u16_t)a->len, (u16_t)a->offset);
 }
 
+#if LWIP_IPV6
 void virtwip_lowpan6_set_pan_id(virtwip_lowpan6_pan_id_args_t *a)
 {
     lowpan6_set_pan_id((u16_t)a->pan_id);
@@ -192,10 +192,11 @@ err_t virtwip_lowpan6_if_init(virtwip_netif_args_t *a)
     return lowpan6_if_init(VM_PTR(netif_t *, a->netif));
 }
 
-err_t virtwip_netif_create_ip6_linklocal_address(virtwip_netif_ip6_linklocal_args_t *a)
+void virtwip_netif_create_ip6_linklocal_address(virtwip_netif_ip6_linklocal_args_t *a)
 {
-    return netif_create_ip6_linklocal_address(VM_PTR(netif_t *, a->netif), (int)a->from_mac);
+    netif_create_ip6_linklocal_address(VM_PTR(netif_t *, a->netif), (u8_t)a->from_mac);
 }
+#endif /* LWIP_IPV6 */
 
 #if LWIP_IPV6_SCOPES
 void virtwip_ip6_addr_assign_zone(virtwip_ip6_addr_zone_args_t *a)
