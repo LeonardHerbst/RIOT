@@ -74,9 +74,11 @@ dump: $(PKG_BUILD_DIR)/lwip.bin
 $(PKG_BUILD_DIR)/lwip.bin: $(PKG_BUILD_DIR)/lwip.o
 	$(EMBPF_GENEMBPF) -d generate $< $@
 
+# -mcpu=v2: femto does not implement the JMP32 instructions of v3;
+# +alu32 keeps the 32-bit ALU operations (supported by femto)
 $(PKG_BUILD_DIR)/lwip.o: $(VIRTWIP_PKG_OBJS) $(VIRTWIP_CONTRIB_OBJS)
 	$(LLVM_LINK) $^ -o $(PKG_BUILD_DIR)/combined.ll
-	$(LLC) $(PKG_BUILD_DIR)/combined.ll -march=bpf -mcpu=v3 -mattr=+alu32 \
+	$(LLC) $(PKG_BUILD_DIR)/combined.ll -march=bpf -mcpu=v2 -mattr=+alu32 \
 		-filetype=obj -stack-size-section -o $@
 
 $(PKG_BUILD_DIR)/%.ll: $(PKG_SOURCE_DIR)/%.c $(VIRTWIP_CONFIG_H) | $$(@D)/
