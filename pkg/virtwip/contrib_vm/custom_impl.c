@@ -41,7 +41,7 @@ void *custom_memset(void *s, int c, size_t n)
         *cur++ = (char)c;
     }
 
-    return cur;
+    return s;
 }
 
 int custom_strncmp(const char *s1, const char *s2, size_t n)

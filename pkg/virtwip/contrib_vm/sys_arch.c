@@ -113,7 +113,11 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 
 err_t sys_mbox_trypost_fromisr(sys_mbox_t *mbox, void *msg)
 {
+    (void)mbox;
+    (void)msg;
+    /* VM code never runs in ISR context */
     LWIP_ASSERT("Unimplemented!", false);
+    return ERR_MEM;
 }
 
 u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
