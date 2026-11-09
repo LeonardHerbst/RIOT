@@ -19,6 +19,8 @@
 
 #include "lwip/sock_internal.h"
 #include "lwip/api.h"
+
+#include "virtwip_glue.h"
 #include "lwip/opt.h"
 
 #ifdef SOCK_HAS_ASYNC_CTX
@@ -93,7 +95,17 @@ int sock_tcp_listen(sock_tcp_queue_t *queue, const sock_tcp_ep_t *local,
     mutex_unlock(&queue->mutex);
 
     /* RIOT-LWIP-BORDER: lwIP call (puts netconn into listen state) */
-    switch (netconn_listen_with_backlog(queue->base.conn, queue->len)) {
+    virtwip_netconn_listen_args_t largs = { .conn = (bpfptr_t)(uintptr_t)queue->base.conn,
+                                            .backlog = queue->len };
+    int64_t res64;
+    err_t lerr;
+    if (virtwip_flow_call("virtwip_netconn_listen_with_backlog", &largs, sizeof(largs), &res64) != 0) {
+        lerr = ERR_MEM;
+    }
+    else {
+        lerr = (err_t)res64;
+    }
+    switch (lerr) {
     case ERR_OK:
         break;
     case ERR_MEM:
@@ -117,8 +129,8 @@ void sock_tcp_disconnect(sock_tcp_t *sock)
     mutex_lock(&sock->mutex);
 
     if (sock->base.conn != NULL) {
-        netconn_close(sock->base.conn); /* RIOT-LWIP-BORDER: lwIP call */
-        netconn_delete(sock->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_conn_close(sock->base.conn); /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_conn_delete(sock->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
         sock->base.conn = NULL;
         /* if sock came from a sock_tcp_queue_t: since sock is a pointer in it's
          * array it is also deleted from there, but we need to decrement the used
@@ -144,8 +156,8 @@ void sock_tcp_stop_listen(sock_tcp_queue_t *queue)
     mutex_lock(&queue->mutex);
 
     if (queue->base.conn != NULL) {
-        netconn_close(queue->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
-        netconn_delete(queue->base.conn);   /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_conn_close(queue->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_conn_delete(queue->base.conn);   /* RIOT-LWIP-BORDER: lwIP call */
         queue->base.conn = NULL;
         /* sever connections established through this queue */
         for (unsigned i = 0; i < queue->len; i++) {
@@ -239,13 +251,23 @@ int sock_tcp_accept(sock_tcp_queue_t *queue, sock_tcp_t **sock,
         }
         else
 #endif
-        if ((timeout == 0) && !mbox_avail(&queue->base.conn->acceptmbox.mbox)) {
+        if ((timeout == 0) && !mbox_avail(virtwip_vm_conn_mbox(&queue->base.conn->acceptmbox))) {
             mutex_unlock(&queue->mutex);
             return -EAGAIN;
         }
 
         /* RIOT-LWIP-BORDER: lwIP call (blocks on accept mbox) */
-        switch (netconn_accept(queue->base.conn, &tmp)) {
+        virtwip_netconn_recv_args_t aargs = { .conn = (bpfptr_t)(uintptr_t)queue->base.conn };
+        int64_t res64;
+        err_t aerr;
+        if (virtwip_flow_call("virtwip_netconn_accept", &aargs, sizeof(aargs), &res64) != 0) {
+            aerr = ERR_MEM;
+        }
+        else {
+            aerr = (err_t)res64;
+        }
+        tmp = (struct netconn *)(uintptr_t)aargs.buf;
+        switch (aerr) {
         case ERR_OK:
             for (unsigned short i = 0; i < queue->len; i++) {
                 sock_tcp_t *s = &queue->array[i];
@@ -276,11 +298,15 @@ int sock_tcp_accept(sock_tcp_queue_t *queue, sock_tcp_t **sock,
         }
     }
     else {
-        while (mbox_avail(&queue->base.conn->acceptmbox.mbox)) {
+        while (mbox_avail(virtwip_vm_conn_mbox(&queue->base.conn->acceptmbox))) {
             /* close connections potentially accepted by lwIP */
-            if (netconn_accept(queue->base.conn, &tmp) == ERR_OK) { /* RIOT-LWIP-BORDER: lwIP call */
-                netconn_close(tmp); /* RIOT-LWIP-BORDER: lwIP call */
-                netconn_delete(tmp);    /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_netconn_recv_args_t aargs = { .conn = (bpfptr_t)(uintptr_t)queue->base.conn };
+            int64_t res64;
+            if (virtwip_flow_call("virtwip_netconn_accept", &aargs, sizeof(aargs), &res64) == 0 &&
+                (err_t)res64 == ERR_OK) {   /* RIOT-LWIP-BORDER: lwIP call */
+                struct netconn *tmp = (struct netconn *)(uintptr_t)aargs.buf;
+                virtwip_vm_conn_close(tmp); /* RIOT-LWIP-BORDER: lwIP call */
+                virtwip_vm_conn_delete(tmp);    /* RIOT-LWIP-BORDER: lwIP call */
             }
         }
         res = -ENOMEM;
@@ -290,7 +316,7 @@ int sock_tcp_accept(sock_tcp_queue_t *queue, sock_tcp_t **sock,
 #endif
 #if IS_ACTIVE(SOCK_HAS_ASYNC)
     if (queue->base.async_cb.gen &&
-        mbox_avail(&queue->base.conn->acceptmbox.mbox)) {
+        mbox_avail(virtwip_vm_conn_mbox(&queue->base.conn->acceptmbox))) {
         queue->base.async_cb.gen(&queue->base, SOCK_ASYNC_CONN_RECV,
                                  queue->base.async_cb_arg);
     }
@@ -333,7 +359,7 @@ ssize_t sock_tcp_read(sock_tcp_t *sock, void *data, size_t max_len,
     else
 #endif
 
-    if ((timeout == 0) && !mbox_avail(&sock->base.conn->recvmbox.mbox)) {
+    if ((timeout == 0) && !mbox_avail(virtwip_vm_conn_mbox(&sock->base.conn->recvmbox))) {
         mutex_unlock(&sock->mutex);
         DEBUG_PUTS("sock_tcp_read(): -EAGAIN");
         return -EAGAIN;
@@ -346,7 +372,16 @@ ssize_t sock_tcp_read(sock_tcp_t *sock, void *data, size_t max_len,
         }
         else {
             err_t err;
-            if ((err = netconn_recv_tcp_pbuf(sock->base.conn, &buf)) < 0) { /* RIOT-LWIP-BORDER: lwIP call (blocks on netconn) */
+            int64_t res64;
+            virtwip_netconn_recv_args_t rargs = { .conn = (bpfptr_t)(uintptr_t)sock->base.conn };
+            if (virtwip_flow_call("virtwip_netconn_recv_tcp_pbuf", &rargs, sizeof(rargs), &res64) != 0) {
+                err = ERR_MEM;
+            }
+            else {
+                err = (err_t)res64;
+            }
+            buf = (struct pbuf *)(uintptr_t)rargs.buf;
+            if (err < 0) { /* RIOT-LWIP-BORDER: lwIP call (blocks on netconn) */
                 DEBUG("sock_tcp_read(): %d", (int)err);
                 switch (err) {
                 case ERR_ABRT:
@@ -378,7 +413,12 @@ ssize_t sock_tcp_read(sock_tcp_t *sock, void *data, size_t max_len,
         }
         buf_len = buf->tot_len - sock->last_offset;
         copylen = (buf_len > recv_left) ? (uint16_t)recv_left : buf_len;
-        pbuf_copy_partial(buf, (uint8_t*)data + recvd, copylen, sock->last_offset); /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_pbuf_copy_partial_args_t cpargs = { .p = (bpfptr_t)(uintptr_t)buf,
+                                                    .buf = (bpfptr_t)(uintptr_t)((uint8_t *)data + recvd),
+                                                    .len = copylen, .offset = sock->last_offset };
+        int64_t cpres;
+        virtwip_flow_call_buf("virtwip_pbuf_copy_partial", &cpargs, sizeof(cpargs),
+                              (uint8_t *)data + recvd, copylen, &cpres);  /* RIOT-LWIP-BORDER: lwIP call */
         recvd += copylen;
         recv_left -= copylen; /* should be 0 at minimum due to copylen setting above */
 
@@ -395,11 +435,11 @@ ssize_t sock_tcp_read(sock_tcp_t *sock, void *data, size_t max_len,
         else {
             sock->last_buf = NULL;
             sock->last_offset = 0;
-            pbuf_free(buf); /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_vm_pbuf_free(buf);  /* RIOT-LWIP-BORDER: lwIP call */
             /* Exit the loop only when there's no more data available in the
              * connection. This allows to copy more data in a single read if
              * available. */
-            if (!mbox_avail(&sock->base.conn->recvmbox.mbox)) {
+            if (!mbox_avail(virtwip_vm_conn_mbox(&sock->base.conn->recvmbox))) {
                 break;
             }
         }

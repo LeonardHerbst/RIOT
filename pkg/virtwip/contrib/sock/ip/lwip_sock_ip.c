@@ -20,6 +20,8 @@
 #include "timex.h"
 
 #include "lwip/api.h"
+
+#include "virtwip_glue.h"
 #include "lwip/ip4.h"
 #include "lwip/ip6.h"
 #include "lwip/netif.h"
@@ -58,7 +60,7 @@ void sock_ip_close(sock_ip_t *sock)
 {
     assert(sock != NULL);
     if (sock->base.conn != NULL) {
-        netconn_delete(sock->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_conn_delete(sock->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
         sock->base.conn = NULL;
     }
 #ifdef SOCK_HAS_ASYNC_CTX
@@ -83,16 +85,12 @@ int sock_ip_get_remote(sock_ip_t *sock, sock_ip_ep_t *ep)
 #if LWIP_IPV4
 static uint16_t _ip4_addr_to_netif(const ip4_addr_p_t *addr)
 {
-    assert(addr != NULL);
+    ip_addr_t bind_addr;
 
+    assert(addr != NULL);
     if (!ip4_addr_isany(addr)) {
-        struct netif *netif;
-        /* cppcheck-suppress uninitvar ; assigned by macro */
-        NETIF_FOREACH(netif) {
-            if (netif_ip4_addr(netif)->addr == addr->addr) {
-                return (int)netif->num + 1;
-            }
-        }
+        ip_addr_copy_from_ip4(bind_addr, *addr);
+        return lwip_sock_bind_addr_to_netif(&bind_addr);
     }
 
     return SOCK_ADDR_ANY_NETIF;
@@ -102,21 +100,14 @@ static uint16_t _ip4_addr_to_netif(const ip4_addr_p_t *addr)
 #if LWIP_IPV6
 static uint16_t _ip6_addr_to_netif(const ip6_addr_p_t *_addr)
 {
+    ip_addr_t bind_addr;
     ip6_addr_t addr;
 
     assert(_addr != NULL);
     ip6_addr_copy_from_packed(addr, *_addr);
     if (!ip6_addr_isany_val(addr)) {
-        struct netif *netif;
-        LOCK_TCPIP_CORE();
-        /* cppcheck-suppress uninitvar ; assigned by macro */
-        NETIF_FOREACH(netif) {
-            if (netif_get_ip6_addr_match(netif, &addr) >= 0) {  /* RIOT-LWIP-BORDER: lwIP call */
-                UNLOCK_TCPIP_CORE();
-                return (int)netif->num + 1;
-            }
-        }
-        UNLOCK_TCPIP_CORE();
+        ip_addr_copy_from_ip6(bind_addr, addr);
+        return lwip_sock_bind_addr_to_netif(&bind_addr);
     }
 
     return SOCK_ADDR_ANY_NETIF;
@@ -173,7 +164,7 @@ static int _parse_iphdr(struct netbuf *buf, void **data, void **ctx,
         break;
 #endif
     default:
-        netbuf_delete(buf); /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_netbuf_delete(buf);  /* RIOT-LWIP-BORDER: lwIP call */
         return -EPROTO;
     }
 
@@ -199,7 +190,10 @@ ssize_t sock_ip_recv_aux(sock_ip_t *sock, void *data, size_t max_len,
         if (ctx->p->tot_len > (ssize_t)max_len) {
             nobufs = true;
             /* progress context to last element */
-            while (netbuf_next(ctx) == 0) {}    /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_netbuf_args_t nargs = { .buf = (bpfptr_t)(uintptr_t)ctx };
+            int64_t res64;
+            while (virtwip_flow_call("virtwip_netbuf_next", &nargs, sizeof(nargs), &res64) == 0 &&
+                   (s8_t)res64 == 0) {}   /* RIOT-LWIP-BORDER: lwIP call */
             continue;
         }
         memcpy(ptr, pkt, res);
@@ -222,9 +216,12 @@ ssize_t sock_ip_recv_buf_aux(sock_ip_t *sock, void **data, void **ctx,
     buf = *ctx;
 
     if (buf != NULL) {
-        if (netbuf_next(buf) == -1) {   /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_netbuf_args_t nargs = { .buf = (bpfptr_t)(uintptr_t)buf };
+        int64_t res64;
+        if (virtwip_flow_call("virtwip_netbuf_next", &nargs, sizeof(nargs), &res64) == 0 &&
+            (s8_t)res64 == -1) {    /* RIOT-LWIP-BORDER: lwIP call */
             *data = NULL;
-            netbuf_delete(buf); /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_vm_netbuf_delete(buf);  /* RIOT-LWIP-BORDER: lwIP call */
             *ctx = NULL;
             return 0;
         }

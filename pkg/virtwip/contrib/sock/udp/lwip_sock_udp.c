@@ -24,6 +24,8 @@
 #include "lwip/sys.h"
 #include "lwip/udp.h"
 
+#include "virtwip_glue.h"
+
 #ifdef SOCK_HAS_ASYNC_CTX
 #include "net/sock/async/event.h"
 #endif
@@ -56,7 +58,7 @@ void sock_udp_close(sock_udp_t *sock)
 {
     assert(sock != NULL);
     if (sock->base.conn != NULL) {
-        netconn_delete(sock->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_vm_conn_delete(sock->base.conn);    /* RIOT-LWIP-BORDER: lwIP call */
         sock->base.conn = NULL;
     }
 #ifdef SOCK_HAS_ASYNC_CTX
@@ -95,7 +97,10 @@ ssize_t sock_udp_recv_aux(sock_udp_t *sock, void *data, size_t max_len,
         if (buf->p->tot_len > (ssize_t)max_len) {
             nobufs = true;
             /* progress context to last element */
-            while (netbuf_next(ctx) == 0) {}    /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_netbuf_args_t nargs = { .buf = (bpfptr_t)(uintptr_t)ctx };
+            int64_t res64;
+            while (virtwip_flow_call("virtwip_netbuf_next", &nargs, sizeof(nargs), &res64) == 0 &&
+                   (s8_t)res64 == 0) {}   /* RIOT-LWIP-BORDER: lwIP call */
             continue;
         }
         memcpy(ptr, pkt, res);
@@ -118,9 +123,12 @@ ssize_t sock_udp_recv_buf_aux(sock_udp_t *sock, void **data, void **ctx,
     buf = *ctx;
 
     if (buf != NULL) {
-        if (netbuf_next(buf) == -1) {   /* RIOT-LWIP-BORDER: lwIP call */
+        virtwip_netbuf_args_t nargs = { .buf = (bpfptr_t)(uintptr_t)buf };
+        int64_t res64;
+        if (virtwip_flow_call("virtwip_netbuf_next", &nargs, sizeof(nargs), &res64) == 0 &&
+            (s8_t)res64 == -1) {    /* RIOT-LWIP-BORDER: lwIP call */
             *data = NULL;
-            netbuf_delete(buf); /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_vm_netbuf_delete(buf);  /* RIOT-LWIP-BORDER: lwIP call */
             *ctx = NULL;
             return 0;
         }
@@ -146,7 +154,7 @@ ssize_t sock_udp_recv_buf_aux(sock_udp_t *sock, void **data, void **ctx,
             family = AF_INET6;
         }
         else if (!IS_ACTIVE(LWIP_IPV4)) {
-            netbuf_delete(buf); /* RIOT-LWIP-BORDER: lwIP call */
+            virtwip_vm_netbuf_delete(buf);  /* RIOT-LWIP-BORDER: lwIP call */
             return -EPROTO;
         }
 
