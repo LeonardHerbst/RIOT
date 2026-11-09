@@ -4,7 +4,7 @@ PKG_URL=https://github.com/lwip-tcpip/lwip.git
 PKG_VERSION=77dcd25a72509eb83f72b033d219b1d40cd8eb95
 PKG_LICENSE=BSD-3-Clause
 
-PKG_SOURCE_LOCAL = /home/leo/projects/lwip/
+PKG_SOURCE_LOCAL = $(RIOTBASE)/../lwip
 
 include $(RIOTBASE)/pkg/pkg.mk
 
