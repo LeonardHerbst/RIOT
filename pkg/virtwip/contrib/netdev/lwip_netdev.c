@@ -180,8 +180,8 @@ err_t lwip_netdev_init(struct netif *netif)
             goto free;
         }
         virtwip_lowpan6_pan_id_args_t pan = { .pan_id = val };
-        int64_t res;
-        virtwip_flow_call("virtwip_lowpan6_set_pan_id", &pan, sizeof(pan), &res);   /* RIOT-LWIP-BORDER: lwIP call */
+        int64_t vm_res;
+        virtwip_flow_call("virtwip_lowpan6_set_pan_id", &pan, sizeof(pan), &vm_res);   /* RIOT-LWIP-BORDER: lwIP call */
         netif->hwaddr_len = (u8_t)netdev->driver->get(netdev, NETOPT_ADDRESS_LONG,
                                                       netif->hwaddr, sizeof(netif->hwaddr));
         if (netif->hwaddr_len > sizeof(netif->hwaddr)) {
@@ -223,8 +223,8 @@ err_t lwip_netdev_init(struct netif *netif)
             virtwip_ip6_addr_zone_args_t zone = { .ip6 = (bpfptr_t)(uintptr_t)addr,
                                                   .netif = (bpfptr_t)(uintptr_t)netif,
                                                   .type = IP6_UNICAST };
-            int64_t res;
-            virtwip_flow_call("virtwip_ip6_addr_assign_zone", &zone, sizeof(zone), &res);
+            int64_t vm_res;
+            virtwip_flow_call("virtwip_ip6_addr_assign_zone", &zone, sizeof(zone), &vm_res);
 #endif
         /* Set address state. */
 #if LWIP_IPV6_DUP_DETECT_ATTEMPTS
@@ -283,8 +283,8 @@ err_t lwip_netdev_init(struct netif *netif)
         virtwip_ip6_addr_zone_args_t zone = { .ip6 = (bpfptr_t)(uintptr_t)addr,
                                               .netif = (bpfptr_t)(uintptr_t)netif,
                                               .type = IP6_UNICAST };
-        int64_t res;
-        virtwip_flow_call("virtwip_ip6_addr_assign_zone", &zone, sizeof(zone), &res);
+        int64_t vm_res;
+        virtwip_flow_call("virtwip_ip6_addr_assign_zone", &zone, sizeof(zone), &vm_res);
 #endif
             /* Consider address valid. */
             netif->ip6_addr_state[0] = IP6_ADDR_PREFERRED;
