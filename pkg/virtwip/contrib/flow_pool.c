@@ -26,7 +26,6 @@
 
 typedef struct {
     f12r_flow_t flow;
-    f12r_mem_region_t scratch;
     uint8_t stack[VIRTWIP_FLOW_STACKSIZE] __attribute__((aligned(8)));
     bool used;
     kernel_pid_t owner;     /**< thread holding the slot */
@@ -45,11 +44,9 @@ static kernel_pid_t _rx_thread = KERNEL_PID_UNDEF;
 
 void virtwip_flow_pool_init(f12r_t *vm)
 {
+    mutex_lock(&_pool_lock);
     _vm = vm;
-    for (unsigned i = 0; i < _NUM_SLOTS; i++) {
-        f12r_add_region(vm, &_slots[i].scratch, NULL, 0,
-                        FC_MEM_REGION_READ | FC_MEM_REGION_WRITE);
-    }
+    mutex_unlock(&_pool_lock);
 }
 
 void virtwip_flow_pool_disable(void)
@@ -146,19 +143,17 @@ static int _flow_call(const char *func, void *args, size_t args_size,
         return err;
     }
 
-    virtwip_flow_slot_t *slot = container_of(flow, virtwip_flow_slot_t, flow);
     if (buf != NULL) {
-        slot->scratch.start = buf;
-        slot->scratch.len = buf_len;
+        /* Only accessible by this flow; f12r_execute() clears it again */
+        flow->scratch_region = (f12r_mem_region_t){
+            .start = buf,
+            .len = buf_len,
+            .flag = FC_MEM_REGION_READ | FC_MEM_REGION_WRITE,
+        };
     }
 
     int64_t r = 0;
     int fc = f12r_execute(flow, args, args_size, &r, func);
-
-    if (buf != NULL) {
-        slot->scratch.start = NULL;
-        slot->scratch.len = 0;
-    }
 
     virtwip_flow_release(flow);
 

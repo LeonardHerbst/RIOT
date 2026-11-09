@@ -133,7 +133,8 @@ int virtwip_flow_call(const char *func, void *args, size_t args_size, int64_t *r
  * @brief   Run a VM trampoline that accesses a host buffer
  *
  * Same as @ref virtwip_flow_call, but the VM gets read/write access to
- * [@p buf, @p buf_len) for the duration of the call.
+ * [@p buf, @p buf_len) for the duration of the call. The access is
+ * restricted to this call's flow, other flows cannot reach @p buf.
  */
 int virtwip_flow_call_buf(const char *func, void *args, size_t args_size,
                           const void *buf, size_t buf_len, int64_t *res);
