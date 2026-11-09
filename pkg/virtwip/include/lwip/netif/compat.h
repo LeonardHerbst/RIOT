@@ -21,6 +21,7 @@
 #include "event.h"
 #include "lwip/netif.h"
 #include "net/netif.h"
+#include "femtocontainer/femtocontainer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,13 @@ extern "C" {
 typedef struct {
     netif_t common_netif;               /**< network interface descriptor */
     struct netif lwip_netif;            /**< lwIP interface data */
+    /**
+     * @brief   Makes lwip_netif accessible to the VM (see setup_netif())
+     *
+     * TODO: lwip_netif lives in host memory and is exposed to all VM flows.
+     * Cleaner: allocate struct netif in VM memory and keep a pointer here.
+     */
+    f12r_mem_region_t vm_region;
     rmutex_t lock;                      /**< lock for the interface */
     event_t ev_isr;                     /**< ISR event */
 #ifdef MODULE_BHP_EVENT

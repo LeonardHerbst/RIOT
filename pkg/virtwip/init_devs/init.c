@@ -13,6 +13,7 @@
  */
 
 #include "kernel_defines.h"
+#include "lwip.h"
 #include "lwip_init_devs.h"
 #include "lwip/tcpip.h"
 #include "lwip/netif/compat.h"
@@ -53,6 +54,10 @@ static struct netif *setup_netif(lwip_netif_t *netif, netdev_t *state,
                                  netif_input_fn input_fn)
 {
     state->context = netif;
+    /* lwIP in the VM works on this host-owned struct netif from now on
+     * (netif_add, netif list, RX/TX): make it accessible to all flows.
+     * TODO: allocate the netif in VM memory instead (no host memory exposed). */
+    virtwip_vm_add_region(&netif->vm_region, &netif->lwip_netif, sizeof(netif->lwip_netif));
     /* RIOT-LWIP-BORDER: lwIP call | also hands lwip_netdev_init() to lwIP
      * as netif->init callback (lwIP calls back into RIOT from netif_add)
      * and lwIP's input_fn (tcpip_input/tcpip_6lowpan_input) as netif->input */

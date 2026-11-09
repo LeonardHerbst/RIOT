@@ -56,4 +56,9 @@ void virtwip_vm_start(void)
 #endif
 }
 
+void virtwip_vm_add_region(f12r_mem_region_t *region, void *start, size_t len)
+{
+    f12r_add_region(&_vm, region, start, len, FC_MEM_REGION_READ | FC_MEM_REGION_WRITE);
+}
+
 /** @} */

@@ -17,6 +17,7 @@
  */
 
 #include "event.h"
+#include "femtocontainer/femtocontainer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,19 @@ void lwip_bootstrap(void);
  * by @ref lwip_bootstrap.
  */
 void virtwip_vm_start(void);
+
+/**
+ * @brief   Makes host memory accessible to every VM flow
+ *
+ * Only for host-owned objects lwIP itself works on (e.g. a netif). The
+ * region list is not protected against concurrent executions: call before
+ * other VM executions can run, i.e. during bootstrap.
+ *
+ * @param[out] region   region node, must stay valid as long as the VM runs
+ * @param[in]  start    start of the memory
+ * @param[in]  len      length in bytes
+ */
+void virtwip_vm_add_region(f12r_mem_region_t *region, void *start, size_t len);
 
 /**
  * @brief   Compares the layouts of all structures shared between host and
