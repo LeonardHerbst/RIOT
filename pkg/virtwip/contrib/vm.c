@@ -34,7 +34,6 @@ void virtwip_vm_start(void)
         /* femto allocates the VM's .data + .bss region (globals and heap) */
         .mut_regions = NULL,
         .mut_regions_len = 0,
-        .branches_remaining = UINT32_MAX,
     };
 
     f12r_setup(&_vm);

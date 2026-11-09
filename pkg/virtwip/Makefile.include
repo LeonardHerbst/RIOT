@@ -59,6 +59,11 @@ PSEUDOMODULES += virtwip_layout_check
 
 CFLAGS += -DFEMTO_CONTAINER_USER_HELPER
 
+# Maximum VM call depth (saved frames per flow, ~48 B each). A guess for the
+# prototype: raise it if executions fail with FC_CALL_DEPTH_LIMIT.
+FEMTO_CONTAINER_CALL_DEPTH ?= 32
+CFLAGS += -DFEMTO_CONTAINER_CALL_DEPTH=$(FEMTO_CONTAINER_CALL_DEPTH)
+
 # IPV6_FRAG_COPYHEADER and LWIP_SO_RCVTIMEO come from virtwip_config.h
 
 ifneq (,$(filter virtwip_contrib,$(USEMODULE)))

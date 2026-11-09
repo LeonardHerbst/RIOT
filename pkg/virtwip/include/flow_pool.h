@@ -56,6 +56,16 @@ extern "C" {
 #define VIRTWIP_NUM_FLOWS_NESTED    (1)
 #endif
 
+#ifndef VIRTWIP_FLOW_BRANCH_LIMIT
+/**
+ * @brief   Maximum number of taken branches per VM call from the pool
+ *
+ * Guards against runaway VM code; 0 disables the limit. The long-running
+ * tcpip thread flow is always unlimited.
+ */
+#define VIRTWIP_FLOW_BRANCH_LIMIT   (1000000U)
+#endif
+
 #ifndef VIRTWIP_FLOW_STACKSIZE
 /**
  * @brief   BPF stack size per flow slot, in bytes

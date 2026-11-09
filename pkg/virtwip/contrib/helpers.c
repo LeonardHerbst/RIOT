@@ -262,6 +262,7 @@ static void *_thread_starter(void *params_ptr)
         .f12r = params->flow->f12r,
         .stack = (uint8_t *)params->bpf_stack,
         .stack_size = params->bpf_stack_size,
+        .branch_limit = 0,  /* unlimited: the thread (tcpip) loops forever */
     };
 
     mutex_unlock(&params->sync);

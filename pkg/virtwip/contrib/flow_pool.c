@@ -118,6 +118,7 @@ int virtwip_flow_acquire(f12r_flow_t **flow)
         .f12r = vm,
         .stack = _slots[idx].stack,
         .stack_size = sizeof(_slots[idx].stack),
+        .branch_limit = VIRTWIP_FLOW_BRANCH_LIMIT,
     };
     *flow = f;
     return 0;
