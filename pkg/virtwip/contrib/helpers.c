@@ -250,7 +250,7 @@ static void *_thread_starter(void *params_ptr)
 
     f12r_flow_t flow = {
         .f12r = params->flow->f12r,
-        .stack = params->bpf_stack,
+        .stack = (uint8_t *)params->bpf_stack,
         .stack_size = params->bpf_stack_size,
     };
 
