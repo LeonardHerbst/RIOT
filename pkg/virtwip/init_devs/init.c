@@ -18,6 +18,7 @@
 #include "lwip/netif/compat.h"
 #include "lwip/netif/netdev.h"
 #include "netif/lowpan6.h"
+#include "flow_pool.h"
 #include "xfa.h"
 
 XFA_INIT_CONST(lwip_netif_setup_func_t, lwip_netif_eth_xfa);
@@ -55,8 +56,17 @@ static struct netif *setup_netif(lwip_netif_t *netif, netdev_t *state,
     /* RIOT-LWIP-BORDER: lwIP call | also hands lwip_netdev_init() to lwIP
      * as netif->init callback (lwIP calls back into RIOT from netif_add)
      * and lwIP's input_fn (tcpip_input/tcpip_6lowpan_input) as netif->input */
-    struct netif *_if = netif_add_noaddr(&netif->lwip_netif, state, (bpfptr_t)lwip_netdev_init,
-                                         input_fn);
+    virtwip_netif_add_noaddr_args_t args = {
+        .netif = (bpfptr_t)(uintptr_t)&netif->lwip_netif,
+        .state = (bpfptr_t)(uintptr_t)state,
+        .init = (bpfptr_t)(uintptr_t)lwip_netdev_init,
+        .input = (uint32_t)input_fn,
+    };
+    int64_t res;
+    if (virtwip_flow_call("virtwip_netif_add_noaddr", &args, sizeof(args), &res) != 0) {
+        return NULL;
+    }
+    struct netif *_if = (struct netif *)(uintptr_t)res;
     if (_if) {
         netif_register(&netif->common_netif);
     }
@@ -66,8 +76,12 @@ static struct netif *setup_netif(lwip_netif_t *netif, netdev_t *state,
 struct netif *lwip_add_ethernet(lwip_netif_t *netif, netdev_t *state)
 {
     struct netif *_if = setup_netif(netif, state, NETIF_INPUT_FN_TCPIP_INPUT);
-    if (_if && netif_default == NULL) {
-        netif_set_default(_if); /* RIOT-LWIP-BORDER: lwIP call */
+    if (_if) {
+        /* RIOT-LWIP-BORDER: lwIP call | only takes effect if no default is
+         * set yet (checked VM-side) */
+        virtwip_netif_args_t args = { .netif = (bpfptr_t)(uintptr_t)_if };
+        int64_t res;
+        virtwip_flow_call("virtwip_netif_set_default", &args, sizeof(args), &res);
     }
     return _if;
 }
