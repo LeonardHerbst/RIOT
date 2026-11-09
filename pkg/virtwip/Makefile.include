@@ -43,6 +43,14 @@ VIRTWIP_IMAGE_DIR := $(BINDIR)/virtwip_image
 $(shell mkdir -p $(VIRTWIP_IMAGE_DIR))
 INCLUDES += -I$(VIRTWIP_IMAGE_DIR)
 
+# Select the lwIP source directories compiled into the VM image
+# (pkg/virtwip/Makefile); no host code of their own.
+PSEUDOMODULES += virtwip_api
+PSEUDOMODULES += virtwip_core
+PSEUDOMODULES += virtwip_ipv4
+PSEUDOMODULES += virtwip_ipv6
+PSEUDOMODULES += virtwip_netif
+
 PSEUDOMODULES += virtwip_arp
 PSEUDOMODULES += virtwip_autoip
 PSEUDOMODULES += virtwip_dhcp
