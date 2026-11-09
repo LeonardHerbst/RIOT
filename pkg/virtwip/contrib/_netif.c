@@ -16,6 +16,7 @@
 #include "fmt.h"
 #include "lwip/netif/compat.h"
 #include "lwip/netifapi.h"
+#include "net/netdev.h"
 #include "net/netif.h"
 
 int netif_get_name(const netif_t *iface, char *name)
