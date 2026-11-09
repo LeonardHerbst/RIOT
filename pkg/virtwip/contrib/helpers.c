@@ -123,6 +123,14 @@ static uint32_t femtoh_mbox_new(f12r_flow_t *flow, uint64_t *regs)
     return 0;
 }
 
+static uint32_t femtoh_mbox_free(f12r_flow_t *flow, uint64_t *regs)
+{
+    (void)flow;
+    (void)regs;
+    /* RIOT mboxes hold no resources that need to be released */
+    return 0;
+}
+
 static uint32_t femtoh_mbox_post(f12r_flow_t *flow, uint64_t *regs)
 {
     (void)flow;
