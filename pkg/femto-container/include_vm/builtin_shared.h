@@ -17,14 +17,19 @@
 extern "C" {
 #endif
 
-#define __bpf_shared_ptr(type, name) \
-__attribute__((aligned(8)))          \
-union {                              \
-    type name;                       \
-    uint64_t :64;                    \
+/* Pointer fields shared between host and VM: 8 bytes and 8-byte aligned on
+ * both sides. The VM always has 8-byte pointers; on 32-bit hosts uint64_t may
+ * only be 4-byte aligned inside structs (e.g. i386), so the alignment has to
+ * be explicit. The attribute must be on the union type: placed in front of
+ * an anonymous union member it is ignored. */
+#define __bpf_shared_ptr(type, name)        \
+union __attribute__((aligned(8))) {         \
+    type name;                              \
+    uint64_t :64;                           \
 }
 
-typedef uint64_t bpfptr_t;
+/* Pointer value passed across the border (8-byte aligned, see above) */
+typedef uint64_t bpfptr_t __attribute__((aligned(8)));
 
 enum {
     BPF_FUNC_BUILTIN_ABORT          = 0x100001,
