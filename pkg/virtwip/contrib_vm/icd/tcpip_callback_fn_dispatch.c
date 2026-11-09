@@ -20,7 +20,7 @@ void tcpip_callback_fn_dispatch(tcpip_callback_fn fn, void *ctx)
             break;
 #if ENABLE_LOOPBACK
         case TCPIP_CALLBACK_FN_NETIF_POLL:
-            netif_poll((netif_t *)ctx);
+            netif_poll((virtwip_netif_t *)ctx);
             break;
 #endif /* ENABLE_LOOPBACK */
 #if LWIP_NETCONN

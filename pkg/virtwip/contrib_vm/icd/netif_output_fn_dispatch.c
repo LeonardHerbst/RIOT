@@ -2,16 +2,16 @@
 #include "lwip/etharp.h"
 
 #if VIRTWIP_SLIPDEV && LWIP_IPV4
-static err_t (*bpf_call_slip_output4)(netif_t *, pbuf_t *, const ip4_addr_t *) = (void *) BPF_FUNC_CALL_SLIP_OUTPUT4;
+static err_t (*bpf_call_slip_output4)(virtwip_netif_t *, pbuf_t *, const ip4_addr_t *) = (void *) BPF_FUNC_CALL_SLIP_OUTPUT4;
 #endif /* VIRTWIP_SLIPDEV && LWIP_IPV4 */
 #if LWIP_IPV4
-err_t netif_null_output_ip4(netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
+err_t netif_null_output_ip4(virtwip_netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
 #endif /* LWIP_IPV4 */
 #if VIRTWIP_ENABLE_SLIPIF
-err_t slipif_output_v4(netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
+err_t slipif_output_v4(virtwip_netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
 #endif /* VIRTWIP_ENABLE_SLIPIF */
 
-err_t netif_output_fn_dispatch(netif_output_fn fn, netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr)
+err_t netif_output_fn_dispatch(netif_output_fn fn, virtwip_netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr)
 {
     switch (fn) {
 #if LWIP_ARP

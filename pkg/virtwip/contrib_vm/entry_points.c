@@ -33,7 +33,7 @@ uint16_t virtwip_sock_bind_addr_to_netif(virtwip_sock_bind_addr_args_t *a)
         return 0;
     }
     LOCK_TCPIP_CORE();
-    netif_t *netif;
+    virtwip_netif_t *netif;
     NETIF_FOREACH(netif) {
         if (IP_IS_V6(&a->addr)) {
 #if LWIP_IPV6
@@ -59,7 +59,7 @@ uint16_t virtwip_sock_bind_addr_to_netif(virtwip_sock_bind_addr_args_t *a)
 /* Returns a pointer to the netif's bind address (VM memory), 0 if none */
 bpfptr_t virtwip_sock_netif_to_bind_addr(virtwip_sock_netif_num_args_t *a)
 {
-    netif_t *netif;
+    virtwip_netif_t *netif;
     NETIF_FOREACH(netif) {
         if (netif->num == (u8_t)(a->netif_num - 1)) {
             switch (a->ip_type) {
@@ -82,7 +82,7 @@ bpfptr_t virtwip_sock_netif_to_bind_addr(virtwip_sock_netif_num_args_t *a)
 
 uint32_t virtwip_sock_addr_on_netif(virtwip_sock_addr_on_netif_args_t *a)
 {
-    netif_t *netif;
+    virtwip_netif_t *netif;
     NETIF_FOREACH(netif) {
         if (netif->num == (u8_t)(a->netif_num - 1)) {
             switch (a->ip_type) {
@@ -107,9 +107,9 @@ uint32_t virtwip_sock_addr_on_netif(virtwip_sock_addr_on_netif_args_t *a)
     return 0;
 }
 
-netif_t *virtwip_netif_add_noaddr(virtwip_netif_add_noaddr_args_t *a)
+virtwip_netif_t *virtwip_netif_add_noaddr(virtwip_netif_add_noaddr_args_t *a)
 {
-    return netif_add_noaddr(VM_PTR(netif_t *, a->netif), VM_PTR(void *, a->state),
+    return netif_add_noaddr(VM_PTR(virtwip_netif_t *, a->netif), VM_PTR(void *, a->state),
                             VM_PTR(netif_init_fn, a->init), (netif_input_fn)a->input);
 }
 
@@ -118,7 +118,7 @@ netif_t *virtwip_netif_add_noaddr(virtwip_netif_add_noaddr_args_t *a)
  * caller must free it. */
 err_t virtwip_netif_input(virtwip_input_args_t *a)
 {
-    netif_t *netif = VM_PTR(netif_t *, a->netif);
+    virtwip_netif_t *netif = VM_PTR(virtwip_netif_t *, a->netif);
 
     return netif_input_fn_dispatch(netif->input, VM_PTR(pbuf_t *, a->p), netif);
 }
@@ -128,7 +128,7 @@ err_t virtwip_netif_input(virtwip_input_args_t *a)
 void virtwip_netif_set_default(virtwip_netif_args_t *a)
 {
     if (netif_default == NULL) {
-        netif_set_default(VM_PTR(netif_t *, a->netif));
+        netif_set_default(VM_PTR(virtwip_netif_t *, a->netif));
     }
 }
 
@@ -140,7 +140,7 @@ void virtwip_tcpip_init(virtwip_tcpip_init_args_t *a)
 #if LWIP_DHCP
 void virtwip_dhcp_start_all(void)
 {
-    netif_t *n = NULL;
+    virtwip_netif_t *n = NULL;
     NETIF_FOREACH(n) {
         if (netif_is_flag_set(n, NETIF_FLAG_ETHERNET)) {
             netifapi_dhcp_start(n);
@@ -151,12 +151,12 @@ void virtwip_dhcp_start_all(void)
 
 void virtwip_netifapi_netif_set_link_up(virtwip_netif_args_t *a)
 {
-    netifapi_netif_set_link_up(VM_PTR(netif_t *, a->netif));
+    netifapi_netif_set_link_up(VM_PTR(virtwip_netif_t *, a->netif));
 }
 
 void virtwip_netifapi_netif_set_link_down(virtwip_netif_args_t *a)
 {
-    netifapi_netif_set_link_down(VM_PTR(netif_t *, a->netif));
+    netifapi_netif_set_link_down(VM_PTR(virtwip_netif_t *, a->netif));
 }
 
 pbuf_t *virtwip_pbuf_alloc(virtwip_pbuf_alloc_args_t *a)
@@ -199,19 +199,19 @@ void virtwip_lowpan6_set_pan_id(virtwip_lowpan6_pan_id_args_t *a)
 
 err_t virtwip_lowpan6_if_init(virtwip_netif_args_t *a)
 {
-    return lowpan6_if_init(VM_PTR(netif_t *, a->netif));
+    return lowpan6_if_init(VM_PTR(virtwip_netif_t *, a->netif));
 }
 
 void virtwip_netif_create_ip6_linklocal_address(virtwip_netif_ip6_linklocal_args_t *a)
 {
-    netif_create_ip6_linklocal_address(VM_PTR(netif_t *, a->netif), (u8_t)a->from_mac);
+    netif_create_ip6_linklocal_address(VM_PTR(virtwip_netif_t *, a->netif), (u8_t)a->from_mac);
 }
 #endif /* LWIP_IPV6 */
 
 #if LWIP_IPV6_SCOPES
 void virtwip_ip6_addr_assign_zone(virtwip_ip6_addr_zone_args_t *a)
 {
-    ip6_addr_assign_zone(VM_PTR(ip6_addr_t *, a->ip6), (u8_t)a->type, VM_PTR(netif_t *, a->netif));
+    ip6_addr_assign_zone(VM_PTR(ip6_addr_t *, a->ip6), (u8_t)a->type, VM_PTR(virtwip_netif_t *, a->netif));
 }
 #endif
 

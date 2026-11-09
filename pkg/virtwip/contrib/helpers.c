@@ -309,7 +309,7 @@ static uint32_t femtoh_call_fp_netif_init_fn(f12r_flow_t *flow, uint64_t *regs)
 {
     (void)flow;
     netif_init_fn_raw fn = (netif_init_fn_raw)ARG1;
-    netif_t *netif = (netif_t *)ARG2;
+    virtwip_netif_t *netif = (virtwip_netif_t *)ARG2;
 
     // TODO check against a whitelist to which legal callbacks are added during
     // initialization
@@ -320,7 +320,7 @@ static uint32_t femtoh_call_fp_netif_linkoutput_fn(f12r_flow_t *flow, uint64_t *
 {
     (void)flow;
     netif_linkoutput_fn_raw fn = (netif_linkoutput_fn_raw)ARG1;
-    netif_t *netif = (netif_t *)ARG2;
+    virtwip_netif_t *netif = (virtwip_netif_t *)ARG2;
     pbuf_t *p = (pbuf_t *)ARG3;
 
     // TODO check against a whitelist to which legal callbacks are added during
@@ -332,7 +332,7 @@ static uint32_t femtoh_call_fp_netif_linkoutput_fn(f12r_flow_t *flow, uint64_t *
 static uint32_t femtoh_call_slip_output4(f12r_flow_t *flow, uint64_t *regs)
 {
     (void)flow;
-    netif_t *netif = (netif_t *)ARG1;
+    virtwip_netif_t *netif = (virtwip_netif_t *)ARG1;
     pbuf_t *p = (pbuf_t *)ARG2;
     const ip4_addr_t *addr = (const ip4_addr_t *)ARG3;
 
@@ -344,7 +344,7 @@ static uint32_t femtoh_call_slip_output4(f12r_flow_t *flow, uint64_t *regs)
 static uint32_t femtoh_call_slip_output6(f12r_flow_t *flow, uint64_t *regs)
 {
     (void)flow;
-    netif_t *netif = (netif_t *)ARG1;
+    virtwip_netif_t *netif = (virtwip_netif_t *)ARG1;
     pbuf_t *p = (pbuf_t *)ARG2;
     const ip6_addr_t *addr = (const ip6_addr_t *)ARG3;
 

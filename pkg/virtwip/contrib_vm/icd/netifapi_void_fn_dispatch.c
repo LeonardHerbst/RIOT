@@ -1,6 +1,6 @@
 #include "lwip/netifapi.h"
 
-void netifapi_void_fn_dispatch(netifapi_void_fn fn, netif_t *netif)
+void netifapi_void_fn_dispatch(netifapi_void_fn fn, virtwip_netif_t *netif)
 {
     switch (fn) {
         case NETIFAPI_VOID_FN_NETIF_REMOVE:

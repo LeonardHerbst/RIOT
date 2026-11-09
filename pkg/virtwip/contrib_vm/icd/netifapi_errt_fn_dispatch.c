@@ -1,6 +1,6 @@
 #include "lwip/netifapi.h"
 
-err_t netifapi_errt_fn_dispatch(netifapi_errt_fn fn, netif_t *netif)
+err_t netifapi_errt_fn_dispatch(netifapi_errt_fn fn, virtwip_netif_t *netif)
 {
     switch (fn) {
 #if LWIP_DHCP

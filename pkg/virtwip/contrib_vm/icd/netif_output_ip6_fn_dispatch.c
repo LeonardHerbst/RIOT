@@ -6,14 +6,14 @@
 
 #if LWIP_IPV6
 #if VIRTWIP_SLIPDEV
-static err_t (*bpf_call_slip_output6)(netif_t *, pbuf_t *, const ip6_addr_t *) = (void *) BPF_FUNC_CALL_SLIP_OUTPUT6;
+static err_t (*bpf_call_slip_output6)(virtwip_netif_t *, pbuf_t *, const ip6_addr_t *) = (void *) BPF_FUNC_CALL_SLIP_OUTPUT6;
 #endif /* VIRTWIP_SLIPDEV */
-err_t netif_null_output_ip6(netif_t *netif, pbuf_t *p, const ip6_addr_t *ipaddr);
+err_t netif_null_output_ip6(virtwip_netif_t *netif, pbuf_t *p, const ip6_addr_t *ipaddr);
 #if VIRTWIP_ENABLE_SLIPIF
-err_t slipif_output_v6(netif_t *netif, pbuf_t *p, const ip6_addr_t *ipaddr);
+err_t slipif_output_v6(virtwip_netif_t *netif, pbuf_t *p, const ip6_addr_t *ipaddr);
 #endif /* VIRTWIP_ENABLE_SLIPIF */
 
-err_t netif_output_ip6_fn_dispatch(netif_output_ip6_fn fn, netif_t *netif, pbuf_t *p, const ip6_addr_t *ipaddr)
+err_t netif_output_ip6_fn_dispatch(netif_output_ip6_fn fn, virtwip_netif_t *netif, pbuf_t *p, const ip6_addr_t *ipaddr)
 {
     switch (fn) {
         case NETIF_OUTPUT_IP6_FN_ETHIP6_OUTPUT:
