@@ -13,7 +13,9 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "femtocontainer/femtocontainer.h"
 
@@ -34,7 +36,12 @@ void virtwip_vm_start(void)
     };
 
     f12r_setup(&_vm);
-    assert(f12r_verify_preflight(&_vm) == FC_OK);
+    int res = f12r_verify_preflight(&_vm);
+    if (res != FC_OK) {
+        printf("virtwip: VM image failed verification (%d)\n", res);
+        assert(false);
+        return;
+    }
 
     virtwip_flow_pool_init(&_vm);
 }

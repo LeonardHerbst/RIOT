@@ -57,6 +57,7 @@ void virtwip_flow_pool_init(f12r_t *vm);
  *                     @ref virtwip_flow_pool_init
  *
  * @return 0 on success
+ * @return -ENODEV if the VM is not running
  * @return -ENOMEM if no slot is free
  */
 int virtwip_flow_acquire(f12r_flow_t **flow);
@@ -78,6 +79,7 @@ void virtwip_flow_release(f12r_flow_t *flow);
  * @param[out] res        return value of the VM function
  *
  * @return 0 on success
+ * @return -ENODEV if the VM is not running
  * @return -ENOMEM if no slot is free
  * @return -EIO if the VM execution failed
  */

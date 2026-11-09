@@ -45,7 +45,10 @@ void virtwip_flow_pool_init(f12r_t *vm)
 
 int virtwip_flow_acquire(f12r_flow_t **flow)
 {
-    assert(_vm != NULL);
+    if (_vm == NULL) {
+        /* VM not started or failed verification */
+        return -ENODEV;
+    }
 
     mutex_lock(&_pool_lock);
     for (unsigned i = 0; i < VIRTWIP_NUM_FLOWS; i++) {
