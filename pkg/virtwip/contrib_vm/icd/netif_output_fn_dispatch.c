@@ -3,8 +3,10 @@
 
 #if MODULE_SLIPDEV_NET && LWIP_IPV4
 static err_t (*bpf_call_slip_output4)(netif_t *, pbuf_t *, const ip4_addr_t *) = (void *) BPF_FUNC_CALL_SLIP_OUTPUT4;
-err_t netif_null_output_ip4(netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
 #endif /* MODULE_SLIPDEV_NET && LWIP_IPV4 */
+#if LWIP_IPV4
+err_t netif_null_output_ip4(netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
+#endif /* LWIP_IPV4 */
 #if VIRTWIP_ENABLE_SLIPIF
 err_t slipif_output_v4(netif_t *netif, pbuf_t *p, const ip4_addr_t *ipaddr);
 #endif /* VIRTWIP_ENABLE_SLIPIF */
