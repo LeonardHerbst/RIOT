@@ -15,6 +15,7 @@
 #include "net/netif.h"
 #include "sock_types.h"
 #include "lwip_init_devs.h"
+#include "virtwip_glue.h"
 
 #include "femtocontainer/femtocontainer.h"
 #include "lwip/api.h"
@@ -167,13 +168,9 @@ static void _mbox_timeout(void *arg)
     mbox_put(arg, &m);
 }
 
-static uint32_t femtoh_mbox_fetch(f12r_flow_t *flow, uint64_t *regs)
+uint32_t virtwip_mbox_fetch(sys_mbox_t *sys_mbox, void **msg, uint32_t timeout)
 {
-    (void)flow;
-    virtwip_mbox_t *mbox = (virtwip_mbox_t *)ARG1;
-    void **msg = (void **)ARG2;
-    uint32_t timeout = (uint32_t)ARG3;
-
+    virtwip_mbox_t *mbox = (virtwip_mbox_t *)sys_mbox;
     msg_t m;
     ztimer_t timer = { .callback = _mbox_timeout, .arg = &mbox->mbox };
 
@@ -186,7 +183,7 @@ static uint32_t femtoh_mbox_fetch(f12r_flow_t *flow, uint64_t *regs)
     ztimer_remove(ZTIMER_MSEC, &timer); /* in case timer did not time out */
     switch (m.type) {
     case _MSG_SUCCESS:
-        *(bpfptr_t *)msg = (bpfptr_t)(uintptr_t)m.content.ptr;
+        *msg = m.content.ptr;
         return stop - start;
     case _MSG_TIMEOUT:
         break;
@@ -195,7 +192,20 @@ static uint32_t femtoh_mbox_fetch(f12r_flow_t *flow, uint64_t *regs)
         assert(false);
         break;
     }
-    return UINT32_MAX;
+    return VIRTWIP_MBOX_TIMEOUT;
+}
+
+static uint32_t femtoh_mbox_fetch(f12r_flow_t *flow, uint64_t *regs)
+{
+    (void)flow;
+    void *msg;
+    uint32_t res = virtwip_mbox_fetch((sys_mbox_t *)ARG1, &msg, (uint32_t)ARG3);
+
+    if (res != VIRTWIP_MBOX_TIMEOUT) {
+        /* the VM's pointer slot is 8 bytes on every host */
+        *(bpfptr_t *)ARG2 = (bpfptr_t)(uintptr_t)msg;
+    }
+    return res;
 }
 
 static uint32_t femtoh_mbox_tryfetch(f12r_flow_t *flow, uint64_t *regs)

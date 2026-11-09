@@ -155,6 +155,20 @@ typedef struct {
     bpfptr_t buf;       /* out */
 } virtwip_netconn_recv_args_t;
 
+/* Receiving is split so the host can wait for the recvmbox outside the VM:
+ * prepare, (host waits if must_wait), then finish or abort (timeout). */
+typedef struct {
+    bpfptr_t conn;
+    bpfptr_t msg;       /* out: message fetched without waiting */
+    uint32_t must_wait; /* out: host has to wait on conn->recvmbox */
+} virtwip_netconn_recv_prepare_args_t;
+
+typedef struct {
+    bpfptr_t conn;
+    bpfptr_t msg;       /* message fetched from conn->recvmbox */
+    bpfptr_t buf;       /* out: received netbuf */
+} virtwip_netconn_recv_finish_args_t;
+
 typedef struct {
     bpfptr_t buf;
     uint32_t size;

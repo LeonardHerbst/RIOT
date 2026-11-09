@@ -245,13 +245,32 @@ err_t virtwip_netconn_getaddr(virtwip_netconn_getaddr_args_t *a)
     return err;
 }
 
-err_t virtwip_netconn_recv(virtwip_netconn_recv_args_t *a)
+/* UDP/raw receive, split so the host waits for conn->recvmbox itself
+ * (see lwip_sock_recv()): a blocked receiver must not occupy a VM flow. */
+err_t virtwip_netconn_recv_prepare(virtwip_netconn_recv_prepare_args_t *a)
 {
-    netbuf_t *buf = NULL;
-    err_t err = netconn_recv(VM_PTR(netconn_t *, a->conn), &buf);
+    void *msg = NULL;
+    u8_t must_wait = 0;
+    err_t err = netconn_recv_data_prepare(VM_PTR(netconn_t *, a->conn), &msg, 0, &must_wait);
+
+    a->msg = (bpfptr_t)(uintptr_t)msg;
+    a->must_wait = must_wait;
+    return err;
+}
+
+err_t virtwip_netconn_recv_finish(virtwip_netconn_recv_finish_args_t *a)
+{
+    void *buf = NULL;
+    err_t err = netconn_recv_data_finish(VM_PTR(netconn_t *, a->conn),
+                                         VM_PTR(void *, a->msg), &buf);
 
     a->buf = (bpfptr_t)(uintptr_t)buf;
     return err;
+}
+
+void virtwip_netconn_recv_abort(virtwip_netconn_args_t *a)
+{
+    netconn_recv_data_abort(VM_PTR(netconn_t *, a->conn));
 }
 
 netbuf_t *virtwip_netbuf_new(void)

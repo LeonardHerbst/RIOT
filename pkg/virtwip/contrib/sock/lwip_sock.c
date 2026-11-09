@@ -579,26 +579,52 @@ int lwip_sock_recv(struct netconn *conn, uint32_t timeout, struct netbuf **buf)
         return -EADDRNOTAVAIL;
     }
 
-#if LWIP_SO_RCVTIMEO
-    if ((timeout != 0) && (timeout != SOCK_NO_TIMEOUT)) {
-        netconn_set_recvtimeout(conn, lwip_sock_timeout_ms(timeout));   /* RIOT-LWIP-BORDER: lwIP call */
-    }
-    else
-#endif
     if ((timeout == 0) && !mbox_avail(virtwip_vm_conn_mbox(&conn->recvmbox))) {
         return -EAGAIN;
     }
 
-    virtwip_netconn_recv_args_t rargs = { .conn = (bpfptr_t)(uintptr_t)conn };
+    /* RIOT-LWIP-BORDER: lwIP call (netconn_recv, split up). The wait for
+     * the recvmbox happens here on the host, between two short VM calls, so
+     * a blocked receiver does not occupy a VM flow. */
+    virtwip_netconn_recv_prepare_args_t pargs = { .conn = (bpfptr_t)(uintptr_t)conn };
     int64_t res64;
     err_t err;
-    if (virtwip_flow_call("virtwip_netconn_recv", &rargs, sizeof(rargs), &res64) != 0) {
-        err = ERR_MEM;  /* RIOT-LWIP-BORDER: lwIP call (blocks on netconn) */
+    *buf = NULL;
+    if (virtwip_flow_call("virtwip_netconn_recv_prepare", &pargs, sizeof(pargs), &res64) != 0) {
+        err = ERR_MEM;
     }
     else {
         err = (err_t)res64;
     }
-    *buf = (struct netbuf *)(uintptr_t)rargs.buf;
+
+    void *msg = (void *)(uintptr_t)pargs.msg;
+    if ((err == ERR_OK) && pargs.must_wait) {
+        uint32_t wait_ms = 0;   /* forever */
+#if LWIP_SO_RCVTIMEO
+        if (timeout != SOCK_NO_TIMEOUT) {
+            wait_ms = lwip_sock_timeout_ms(timeout);
+        }
+#endif
+        if (virtwip_mbox_fetch(&conn->recvmbox, &msg, wait_ms) == VIRTWIP_MBOX_TIMEOUT) {
+            virtwip_netconn_args_t aargs = { .conn = (bpfptr_t)(uintptr_t)conn };
+            virtwip_flow_call("virtwip_netconn_recv_abort", &aargs, sizeof(aargs), &res64);
+            err = ERR_TIMEOUT;
+        }
+    }
+
+    if (err == ERR_OK) {
+        virtwip_netconn_recv_finish_args_t fargs = { .conn = (bpfptr_t)(uintptr_t)conn,
+                                                     .msg = (bpfptr_t)(uintptr_t)msg };
+        if (virtwip_flow_call("virtwip_netconn_recv_finish", &fargs, sizeof(fargs),
+                              &res64) != 0) {
+            /* msg was taken from the mbox but could not be processed */
+            err = ERR_MEM;
+        }
+        else {
+            err = (err_t)res64;
+            *buf = (struct netbuf *)(uintptr_t)fargs.buf;
+        }
+    }
     switch (err) {
     case ERR_OK:
         res = 0;
@@ -616,10 +642,6 @@ int lwip_sock_recv(struct netconn *conn, uint32_t timeout, struct netbuf **buf)
         break;
     }
 
-    /* unset flags */
-#if LWIP_SO_RCVTIMEO
-    netconn_set_recvtimeout(conn, 0);   /* RIOT-LWIP-BORDER: lwIP call */
-#endif
 #if IS_ACTIVE(SOCK_HAS_ASYNC)
     lwip_sock_base_t *sock = netconn_get_callback_arg(conn);    /* RIOT-LWIP-BORDER: lwIP call */
 
