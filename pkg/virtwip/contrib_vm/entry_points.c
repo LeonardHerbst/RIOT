@@ -113,6 +113,16 @@ netif_t *virtwip_netif_add_noaddr(virtwip_netif_add_noaddr_args_t *a)
                             VM_PTR(netif_init_fn, a->init), (netif_input_fn)a->input);
 }
 
+/* RX entry: hands a received packet to the netif's input function
+ * (tcpip_input/tcpip_6lowpan_input). On ERR_OK lwIP owns p, otherwise the
+ * caller must free it. */
+err_t virtwip_netif_input(virtwip_input_args_t *a)
+{
+    netif_t *netif = VM_PTR(netif_t *, a->netif);
+
+    return netif_input_fn_dispatch(netif->input, VM_PTR(pbuf_t *, a->p), netif);
+}
+
 /* Sets the default netif only if none is set yet (the caller cannot read
  * lwIP's netif_list global) */
 void virtwip_netif_set_default(virtwip_netif_args_t *a)
