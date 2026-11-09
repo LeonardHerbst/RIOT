@@ -1,5 +1,5 @@
 PKG_NAME    = femto-container
-PKG_VERSION = 3cd025a6798ba42b9357f2cca08e8b760cbce7f9
+PKG_VERSION = fc398b30290c8e35d0a47bd2de8cb9456784a27b
 PKG_URL     = git@github.com:LeonardHerbst/Femto-Container.git
 PKG_LICENSE = apache
 
