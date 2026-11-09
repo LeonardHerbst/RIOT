@@ -31,9 +31,10 @@ void virtwip_vm_start(void)
     _vm = (f12r_t){
         .application = lwip_bin,
         .application_len = lwip_bin_len,
-        /* femto allocates the VM's .data + .bss region (globals and heap) */
-        .mut_regions = NULL,
-        .mut_regions_len = 0,
+        /* No buffer given: femto malloc()s the VM's .data + .bss region
+         * (globals and the lwIP heap) in f12r_setup() */
+        .mutable_data = NULL,
+        .mutable_data_len = 0,
     };
 
     f12r_setup(&_vm);
