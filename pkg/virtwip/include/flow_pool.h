@@ -18,6 +18,7 @@
 #define FLOW_POOL_H
 
 #include "femtocontainer/femtocontainer.h"
+#include "sched.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,12 +26,34 @@ extern "C" {
 
 #ifndef VIRTWIP_NUM_FLOWS
 /**
- * @brief   Number of flow slots in the pool
+ * @brief   Number of general flow slots, usable by every thread
  *
- * Worst case concurrent VM executions: bootstrap (outer + one nested
- * call), one netdev event thread per netif, one per sock-API thread.
+ * Bounds the number of host threads (sock API users, bootstrap) executing
+ * VM code at the same time. A thread only holds a slot while executing VM
+ * code; long waits (e.g. sock_udp_recv) happen outside the VM.
  */
 #define VIRTWIP_NUM_FLOWS   (4)
+#endif
+
+#ifndef VIRTWIP_NUM_FLOWS_RX
+/**
+ * @brief   Slots reserved for the netdev RX thread
+ *
+ * Guarantees that received packets can always enter the VM, even if all
+ * general slots are in use (see @ref virtwip_flow_pool_set_rx_thread).
+ */
+#define VIRTWIP_NUM_FLOWS_RX    (1)
+#endif
+
+#ifndef VIRTWIP_NUM_FLOWS_NESTED
+/**
+ * @brief   Slots reserved for nested VM calls
+ *
+ * A thread that already holds a slot (VM -> host helper -> VM again, e.g.
+ * netif_add() -> lwip_netdev_init() -> VM) may use these, so a nested call
+ * cannot fail because other threads took all general slots.
+ */
+#define VIRTWIP_NUM_FLOWS_NESTED    (1)
 #endif
 
 #ifndef VIRTWIP_FLOW_STACKSIZE
@@ -51,6 +74,16 @@ extern "C" {
 void virtwip_flow_pool_init(f12r_t *vm);
 
 /**
+ * @brief   Register the netdev RX thread
+ *
+ * Flow acquisitions from this thread may use the
+ * @ref VIRTWIP_NUM_FLOWS_RX reserved slots.
+ *
+ * @param[in] pid   pid of the RX thread
+ */
+void virtwip_flow_pool_set_rx_thread(kernel_pid_t pid);
+
+/**
  * @brief   Unbind the pool from its VM
  *
  * All following flow acquisitions fail with -ENODEV.
@@ -66,6 +99,10 @@ void virtwip_flow_pool_disable(void);
  * @return 0 on success
  * @return -ENODEV if the VM is not running
  * @return -ENOMEM if no slot is free
+ *
+ * Slot selection: the RX thread (@ref virtwip_flow_pool_set_rx_thread)
+ * first tries its reserved slots, a thread already holding a slot first
+ * tries the nested slots, then both fall back to the general slots.
  */
 int virtwip_flow_acquire(f12r_flow_t **flow);
 

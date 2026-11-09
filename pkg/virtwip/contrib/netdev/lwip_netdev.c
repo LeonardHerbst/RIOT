@@ -592,6 +592,8 @@ static void _isr(event_t *ev)
 static void *_event_loop(void *arg)
 {
     (void)arg;
+    /* RX must always be able to enter the VM: use the reserved flow slots */
+    virtwip_flow_pool_set_rx_thread(thread_getpid());
     event_queue_claim(&lwip_event_queue);
     event_loop(&lwip_event_queue);
 
