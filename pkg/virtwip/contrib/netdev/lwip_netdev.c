@@ -11,6 +11,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <sys/uio.h>
 
@@ -496,8 +497,13 @@ static struct pbuf *_get_recv_pkt(netdev_t *dev)
     virtwip_pbuf_take_args_t take = { .p = (bpfptr_t)(uintptr_t)p,
                                       .buf = (bpfptr_t)(uintptr_t)_tmp_buf,
                                       .len = (u16_t)len };
-    virtwip_flow_call_buf("virtwip_pbuf_take", &take, sizeof(take),
-                           _tmp_buf, len, &res);   /* RIOT-LWIP-BORDER: lwIP call */
+    if (virtwip_flow_call_buf("virtwip_pbuf_take", &take, sizeof(take),
+                              _tmp_buf, len, &res) != 0 ||
+        (err_t)res != ERR_OK) {   /* RIOT-LWIP-BORDER: lwIP call */
+        DEBUG("lwip_netdev: can not copy packet into pbuf\n");
+        virtwip_vm_pbuf_free(p);
+        return NULL;
+    }
     return p;
 }
 
@@ -537,17 +543,16 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
                 .p = (bpfptr_t)(uintptr_t)p,
                 .netif = (bpfptr_t)(uintptr_t)netif,
             };
-            f12r_flow_t *rx_flow;
             int64_t res;
-            if (virtwip_flow_acquire(&rx_flow) != 0) {
-                DEBUG("lwip_netdev: no free flow slot\n");
-                virtwip_vm_pbuf_free(p);
+            int err = virtwip_flow_call("virtwip_netif_input", &args, sizeof(args), &res);
+            if (err == -EIO) {
+                /* The VM aborted, possibly after lwIP took ownership of p
+                 * (e.g. already posted to the tcpip mbox). Freeing p here
+                 * could double free it, so leak it instead. */
+                DEBUG("lwip_netdev: VM failed while inputing packet\n");
                 return;
             }
-            f12r_execute(rx_flow, &args, sizeof(args), &res, "virtwip_netif_input");
-            virtwip_flow_release(rx_flow);
-
-            if ((err_t)(uint8_t)res != ERR_OK) {   /* e.g. tcpip mbox full */
+            if (err != 0 || (err_t)res != ERR_OK) {   /* no flow slot / tcpip mbox full */
                 DEBUG("lwip_netdev: error inputing packet\n");
                 virtwip_vm_pbuf_free(p);                  /* caller owns p on failure */
                 return;
