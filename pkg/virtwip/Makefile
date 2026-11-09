@@ -63,7 +63,18 @@ LLVM_LINK ?= llvm-link-21
 
 .PHONY: all
 
-all: $(PKG_BUILD_DIR)/lwip.bin
+# The image as C array for the host build (contrib/vm.c). femto reads .text,
+# .rodata and the function table in place, so the array must be 8-byte
+# aligned; RIOT's BLOBS mechanism (xxd -i) gives no alignment guarantee.
+VIRTWIP_IMAGE_DIR ?= $(BINDIR)/virtwip_image
+XXD ?= xxd
+
+all: $(VIRTWIP_IMAGE_DIR)/virtwip_image.h
+
+$(VIRTWIP_IMAGE_DIR)/virtwip_image.h: $(PKG_BUILD_DIR)/lwip.bin | $$(@D)/
+	cd $(PKG_BUILD_DIR) && $(XXD) -i lwip.bin | sed \
+		-e 's/^unsigned char /const unsigned char __attribute__((aligned(8))) /' \
+		-e 's/^unsigned int /const unsigned int /' > $@
 
 %/:
 	@mkdir -p $@

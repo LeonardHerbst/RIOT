@@ -35,10 +35,13 @@ INCLUDES += -I$(RIOTBASE)/pkg/virtwip/include \
             -I$(VIRTWIP_CONFIG_DIR) \
             -I$(PKGDIRBASE)/virtwip/src/include
 
-# Embed the VM image as RIOT blob ("blob/lwip.bin.h", symbols lwip_bin /
-# lwip_bin_len); vpath keeps bin/<board> out of the C include path.
-BLOBS += lwip.bin
-vpath lwip.bin $(BINDIR)/pkg-build/virtwip
+# The VM image is embedded as 8-byte aligned C array: pkg/virtwip/Makefile
+# writes it to $(VIRTWIP_IMAGE_DIR)/virtwip_image.h (symbols lwip_bin /
+# lwip_bin_len). The directory is created here because it is on the include
+# path of every module (-Wmissing-include-dirs).
+VIRTWIP_IMAGE_DIR := $(BINDIR)/virtwip_image
+$(shell mkdir -p $(VIRTWIP_IMAGE_DIR))
+INCLUDES += -I$(VIRTWIP_IMAGE_DIR)
 
 PSEUDOMODULES += virtwip_arp
 PSEUDOMODULES += virtwip_autoip
